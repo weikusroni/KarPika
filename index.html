@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<title>KarPika – Łowisko Podolsze</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cabin:ital,wght@0,400;0,600;0,700;1,400&family=Titan+One&display=swap');
+:root{
+  --bg:#f0ede6;--bg2:#e8e3d8;--card:#faf8f3;--cream:#fff8ee;
+  --moss:#4a6741;--moss2:#6a9460;--moss3:#2e4228;
+  --earth:#7a5c3a;--earth2:#a07848;
+  --sand:#c8b48a;--sand2:#e0ceaa;
+  --water:#3a6a7a;--water2:#5a9aaa;
+  --text:#2e2a20;--textm:#6a6050;
+  --red:#c0392b;--border:rgba(74,103,65,0.2);--shadow:0 2px 12px rgba(0,0,0,0.1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);font-family:'Cabin',sans-serif;color:var(--text);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.05;
+  background-image:radial-gradient(ellipse 60px 40px at 10% 15%,#2e4228 0%,transparent 100%),
+  radial-gradient(ellipse 80px 30px at 55% 10%,#6a9460 0%,transparent 100%),
+  radial-gradient(ellipse 50px 50px at 75% 35%,#2e4228 0%,transparent 100%),
+  radial-gradient(ellipse 70px 40px at 20% 70%,#7a5c3a 0%,transparent 100%);
+  background-size:400px 300px}
+.page{position:relative;z-index:1;max-width:680px;margin:0 auto;padding:12px 12px 60px}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,var(--moss3) 0%,var(--moss) 60%,var(--moss2) 100%);
+  border-radius:16px;padding:14px 16px;margin-bottom:12px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.hdr::before{content:'';position:absolute;inset:0;
+  background-image:radial-gradient(ellipse 100px 60px at 90% 20%,rgba(0,0,0,0.15) 0%,transparent 70%);pointer-events:none}
+.hdr-inner{display:flex;align-items:center;gap:12px;position:relative;z-index:1}
+.logo-wrap{width:56px;height:56px;flex-shrink:0;border-radius:50%;background:#fff;
+  border:3px solid var(--sand);box-shadow:0 3px 12px rgba(0,0,0,0.3);
+  padding:5px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.logo-wrap img{width:100%;height:100%;object-fit:contain}
+.hdr-text{flex:1}
+.hdr-title{font-family:'Titan One',sans-serif;font-size:1.5rem;line-height:1;color:#fff;letter-spacing:2px}
+.hdr-sub{font-size:0.62rem;letter-spacing:2px;color:rgba(255,255,255,0.6);text-transform:uppercase;margin-top:2px;font-style:italic}
+.hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
+.lang-row{display:flex;gap:4px}
+.lang-btn{font-family:'Cabin',sans-serif;font-weight:700;font-size:0.65rem;
+  padding:3px 8px;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);
+  border:1px solid rgba(255,255,255,0.25);border-radius:20px;cursor:pointer;transition:all .15s}
+.lang-btn.active{background:rgba(255,255,255,0.9);color:var(--moss3);border-color:transparent}
+.admin-btn{font-family:'Cabin',sans-serif;font-weight:700;font-size:0.65rem;
+  padding:4px 10px;background:rgba(212,168,67,0.25);color:rgba(255,248,200,0.9);
+  border:1px solid rgba(212,168,67,0.4);border-radius:20px;cursor:pointer;transition:all .15s}
+.admin-btn:hover{background:rgba(212,168,67,0.45)}
+
+/* INFO BAR */
+.info-bar{background:linear-gradient(90deg,var(--moss3),var(--moss));
+  border-radius:10px;padding:7px 14px;margin-bottom:12px;
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;box-shadow:var(--shadow)}
+.ib-item{font-size:0.7rem;color:rgba(255,255,255,0.8);display:flex;align-items:center;gap:3px}
+.ib-sep{color:rgba(255,255,255,0.25);font-size:0.7rem}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:16px;margin-bottom:12px;box-shadow:var(--shadow);position:relative}
+.card::before{content:'';position:absolute;top:0;left:15%;right:15%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--sand2),transparent);opacity:0.5}
+.card-title{font-family:'Titan One',sans-serif;font-size:0.82rem;letter-spacing:2px;
+  color:var(--moss3);text-transform:uppercase;margin-bottom:12px;
+  display:flex;align-items:center;gap:8px}
+.card-title::after{content:'';flex:1;height:2px;background:linear-gradient(90deg,var(--sand2),transparent)}
+
+/* LAKE MAP */
+.lake-map-wrap{border-radius:10px;overflow:hidden;border:2px solid var(--border);cursor:zoom-in;transition:transform .2s}
+
+
+
+/* LIGHTBOX */
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:400;
+  display:none;align-items:center;justify-content:center;cursor:zoom-out}
+.lightbox.open{display:flex}
+.lightbox img{max-width:98vw;max-height:96vh;border-radius:8px;
+  box-shadow:0 0 60px rgba(0,0,0,0.8);object-fit:contain}
+.lb-close{position:absolute;top:16px;right:20px;font-size:2rem;color:#fff;
+  cursor:pointer;line-height:1;z-index:401;opacity:0.8}
+.lb-close:hover{opacity:1}
+
+/* EVENT STATUS */
+.event-status-bar{background:linear-gradient(90deg,var(--moss3),var(--moss));
+  border-radius:10px;padding:10px 14px;margin-bottom:12px;
+  display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow)}
+.esb-label{font-size:0.6rem;letter-spacing:3px;color:rgba(255,255,255,0.5);text-transform:uppercase}
+.esb-val{font-family:'Titan One',sans-serif;font-size:0.9rem;color:#90ee60;text-shadow:0 0 10px #90ee60}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#90ee60;box-shadow:0 0 8px #90ee60;
+  animation:pulse 1.5s ease-in-out infinite;display:inline-block;margin-right:5px}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.3)}}
+
+/* MINI LB */
+.mini-lb{display:flex;flex-direction:column;gap:6px}
+.mini-cat{background:var(--bg2);border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.mini-cat-hdr{background:linear-gradient(90deg,var(--moss3),var(--moss));padding:5px 10px;
+  font-family:'Titan One',sans-serif;font-size:0.7rem;color:#fff;letter-spacing:2px}
+.mini-row{display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid rgba(0,0,0,0.04);font-size:0.78rem}
+.mini-row:last-child{border-bottom:none}
+.mini-rank{font-family:'Titan One',sans-serif;font-size:0.85rem;width:20px;text-align:center;flex-shrink:0}
+.mini-rank.gold{color:#d4a843}.mini-rank.silver{color:#a0a8b0}.mini-rank.bronze{color:var(--earth2)}
+.mini-name{flex:1;font-weight:600;color:var(--text)}
+.mini-val{font-family:'Titan One',sans-serif;font-size:0.82rem;color:var(--moss3);flex-shrink:0}
+.mini-unit{font-size:0.65rem;color:var(--textm);flex-shrink:0}
+
+/* PERSON CARDS DASHBOARD */
+.persons-access-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pac{background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;
+  padding:9px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:8px}
+.pac:hover{border-color:var(--moss2);background:rgba(106,148,96,0.1);transform:translateY(-1px)}
+.pac-avatar{width:40px;height:40px;flex-shrink:0;border-radius:50%;overflow:hidden;border:1.5px solid var(--border);background:var(--bg2)}
+.pac-info{flex:1;min-width:0}
+.pac-name{font-size:0.8rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pac-detail{font-size:0.62rem;color:var(--textm);font-style:italic}
+.pac-fish{font-size:0.68rem;color:var(--moss2);font-weight:700;flex-shrink:0}
+
+/* ARCHIVE */
+.archive-list{display:flex;flex-direction:column;gap:8px}
+.archive-item{background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;
+  padding:12px 14px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:10px}
+.archive-item:hover{border-color:var(--moss2);background:rgba(106,148,96,0.08)}
+.ai-dot{width:10px;height:10px;border-radius:50%;background:var(--moss2);flex-shrink:0}
+.ai-dot.active{background:#90ee60;box-shadow:0 0 6px #90ee60}
+.ai-info{flex:1;min-width:0}
+.ai-name{font-family:'Titan One',sans-serif;font-size:0.95rem;color:var(--moss3)}
+.ai-date{font-size:0.7rem;color:var(--textm);font-style:italic;margin-top:2px}
+
+/* FORMS */
+.form-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap}
+.form-label{font-size:0.8rem;font-weight:600;color:var(--textm);min-width:110px;padding-top:9px}
+.field-wrap{flex:1;min-width:0}
+.fish-input,.fish-select{width:100%;background:var(--cream);border:2px solid var(--sand2);
+  border-radius:8px;color:var(--text);font-family:'Cabin',sans-serif;font-size:0.88rem;
+  padding:8px 11px;outline:none;transition:border-color .2s,box-shadow .2s}
+.fish-input:focus,.fish-select:focus{border-color:var(--moss2);box-shadow:0 0 0 3px rgba(106,148,96,0.15)}
+.fish-input.error{border-color:var(--red);box-shadow:0 0 0 3px rgba(192,57,43,0.12);
+  background:#fff5f5;animation:shake .3s ease-out}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.fish-select option{background:#fff}
+.err-msg{font-size:0.72rem;color:var(--red);margin-top:3px;display:none;font-style:italic}
+.err-msg.show{display:block}
+.places-inline{display:flex;align-items:center;gap:8px;flex:1}
+.places-inline input{width:70px;flex:none}
+.places-sep{font-size:0.8rem;color:var(--textm);font-weight:600}
+
+/* PERSON SETUP */
+.persons-list{display:flex;flex-direction:column;gap:8px}
+.person-row{background:var(--bg2);border:2px solid transparent;border-radius:10px;padding:10px 12px;transition:border-color .2s}
+.person-row.has-error{border-color:var(--red)}
+.person-row-top{display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+.pr-avatar{width:36px;height:36px;flex-shrink:0;border-radius:50%;overflow:hidden;border:1px solid var(--border)}
+.pr-num{font-family:'Titan One',sans-serif;font-size:0.9rem;color:var(--moss3);width:20px;flex-shrink:0}
+.pr-name{flex:1;min-width:100px}
+.pr-team-sel{width:100px;flex-shrink:0}
+.pr-place-inp{width:70px;flex-shrink:0}
+.pr-err{font-size:0.7rem;color:var(--red);margin-top:2px;display:none;font-style:italic}
+.pr-err.show{display:block}
+.hc-label{font-size:0.68rem;letter-spacing:2px;color:var(--textm);text-transform:uppercase;margin-bottom:4px;font-weight:600}
+.hc-chips{display:flex;flex-wrap:wrap;gap:4px}
+.hc-chip{font-size:0.72rem;font-weight:600;padding:3px 8px;border-radius:20px;
+  border:1.5px solid var(--sand);background:var(--cream);color:var(--textm);
+  cursor:pointer;transition:all .15s;user-select:none}
+.hc-chip:hover{border-color:var(--moss2);color:var(--moss3)}
+.hc-chip.blocked{border-color:var(--red);background:rgba(192,57,43,0.1);color:var(--red)}
+
+/* TEAM BADGE */
+.team-badge{display:inline-block;padding:2px 7px;border-radius:12px;font-size:0.65rem;font-weight:700;color:#fff}
+.tb-1{background:#4a6741}.tb-2{background:#7a5c3a}.tb-3{background:#3a6a7a}
+.tb-4{background:#8b5e3c}.tb-5{background:#5c4a7a}.tb-6{background:#3a7a5c}
+.tb-7{background:#7a3a4a}.tb-8{background:#4a7a7a}.tb-9{background:#7a7a3a}.tb-10{background:#6a4a7a}
+
+/* ADMIN MANAGE */
+.manage-row{background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;
+  padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mr-avatar{font-size:1.6rem;flex-shrink:0}
+.mr-info{flex:1;min-width:0}
+.mr-name{font-weight:700;font-size:0.88rem;color:var(--text)}
+.mr-detail{font-size:0.7rem;color:var(--textm);font-style:italic}
+.mr-actions{display:flex;gap:5px;flex-shrink:0}
+.btn-icon{background:none;border:1px solid var(--sand2);border-radius:7px;
+  padding:4px 8px;cursor:pointer;font-size:0.85rem;color:var(--textm);transition:all .15s}
+.btn-icon:hover{border-color:var(--moss2);color:var(--moss3)}
+.btn-icon.red:hover{border-color:var(--red);color:var(--red)}
+
+/* INLINE EDIT */
+.inline-edit{background:var(--cream);border:2px solid var(--moss2);border-radius:8px;
+  padding:10px 12px;margin-top:6px;display:none}
+.inline-edit.open{display:block}
+.edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.edit-grid label{font-size:0.7rem;font-weight:600;color:var(--textm)}
+
+/* MACHINE */
+.machine{background:linear-gradient(180deg,var(--moss3) 0%,#1e2e1a 60%,var(--moss3) 100%);
+  border:3px solid var(--moss2);border-radius:16px;
+  box-shadow:0 0 0 1px rgba(0,0,0,0.3),0 8px 32px rgba(0,0,0,0.35);overflow:hidden;margin-bottom:12px}
+.machine-top{background:linear-gradient(90deg,var(--earth) 0%,var(--earth2) 50%,var(--earth) 100%);
+  padding:7px 14px;display:flex;align-items:center;justify-content:space-between}
+.mt-txt{font-family:'Titan One',sans-serif;font-size:0.78rem;letter-spacing:2px;color:#fff}
+.leds{display:flex;gap:5px}
+.led{width:8px;height:8px;border-radius:50%;background:#90ee60;box-shadow:0 0 6px #90ee60;
+  animation:lb 1.2s ease-in-out infinite alternate}
+.led:nth-child(2){animation-delay:.4s}.led:nth-child(3){animation-delay:.8s}
+@keyframes lb{from{opacity:1}to{opacity:.25}}
+.machine-status{background:rgba(0,0,0,0.4);padding:8px 14px;display:flex;align-items:center;justify-content:space-between}
+.ms-label{font-size:0.6rem;letter-spacing:3px;color:rgba(255,255,255,0.4);text-transform:uppercase}
+.ms-val{font-family:'Titan One',sans-serif;font-size:0.95rem;color:#90ee60;text-shadow:0 0 10px #90ee60}
+.reel-scroll{overflow-x:auto;overflow-y:hidden;scrollbar-width:none;padding:10px 8px 6px;
+  -webkit-mask:linear-gradient(90deg,transparent 0%,black 5%,black 95%,transparent 100%);
+  mask:linear-gradient(90deg,transparent 0%,black 5%,black 95%,transparent 100%)}
+.reel-scroll::-webkit-scrollbar{display:none}
+.reel-track{display:flex;gap:5px;width:max-content;min-width:100%}
+.reel-col{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;width:68px}
+.col-place{font-family:'Titan One',sans-serif;font-size:0.72rem;letter-spacing:1px;
+  color:rgba(255,255,255,0.25);height:18px;transition:color .3s}
+.reel-col.active .col-place{color:#90ee60;text-shadow:0 0 8px #90ee60}
+.reel-col.done .col-place{color:var(--sand2)}
+.reel-window{width:68px;height:84px;border-radius:8px;border:2px solid rgba(255,255,255,0.1);
+  background:#0a140a;overflow:hidden;position:relative;box-shadow:inset 0 0 20px rgba(0,0,0,0.8)}
+.reel-window::before,.reel-window::after{content:'';position:absolute;left:0;right:0;height:2px;z-index:5;pointer-events:none}
+.reel-window::before{top:0;background:linear-gradient(90deg,transparent,rgba(144,238,96,0.7),transparent)}
+.reel-window::after{bottom:0;background:linear-gradient(90deg,transparent,rgba(144,238,96,0.7),transparent)}
+.reel-vig{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.65) 0%,transparent 28%,transparent 72%,rgba(0,0,0,0.65) 100%);z-index:4;pointer-events:none}
+.reel-strip{display:flex;flex-direction:column;will-change:transform}
+.reel-item{width:68px;height:84px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:1px;flex-shrink:0;background:#0c180c;border-bottom:1px solid #162216}
+.ri-avatar{width:44px;height:44px;border-radius:50%;overflow:hidden;border:1.5px solid rgba(144,238,96,0.3);flex-shrink:0}
+.ri-num{font-family:'Titan One',sans-serif;font-size:0.9rem;color:#6a9060;line-height:1}
+.reel-item.winner-cell{background:rgba(144,238,96,0.12)}
+.reel-item.winner-cell .ri-num{color:#b0ee60;text-shadow:0 0 12px #90ee60}
+.col-name{font-size:0.55rem;color:rgba(255,255,255,0.15);text-align:center;
+  height:28px;display:flex;align-items:center;justify-content:center;
+  line-height:1.2;padding:0 2px;transition:color .4s}
+.reel-col.done .col-name{color:var(--sand2);font-style:italic;font-weight:600}
+.lever-zone{display:flex;justify-content:flex-end;align-items:flex-end;padding:2px 18px 6px;height:50px}
+.lever-base{width:17px;height:20px;background:linear-gradient(135deg,var(--sand),var(--earth));
+  border-radius:3px;border:2px solid var(--earth);position:relative;flex-shrink:0}
+.lever-arm{width:5px;height:38px;background:linear-gradient(90deg,var(--sand2),var(--earth2),var(--sand2));
+  border-radius:3px;position:absolute;bottom:100%;left:50%;
+  transform:translateX(-50%) rotate(-25deg);transform-origin:bottom center;transition:transform .15s ease-in}
+.lever-arm.pulled{transform:translateX(-50%) rotate(32deg)}
+.lever-ball{width:16px;height:16px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#90ee60,var(--moss3));
+  border:2px solid var(--moss3);position:absolute;top:-9px;left:50%;transform:translateX(-50%)}
+.machine-btns{display:flex;gap:8px;padding:0 12px 14px}
+
+/* PERSONS DRAW */
+.persons-draw-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.pdc{background:var(--bg2);border:2px solid var(--border);border-radius:8px;
+  padding:7px 9px;display:flex;align-items:center;gap:6px;transition:all .25s}
+.pdc.out{opacity:0.2}
+.pdc.won{border-color:var(--moss2);background:rgba(106,148,96,0.15);animation:cwin .5s ease-out}
+@keyframes cwin{0%{box-shadow:0 0 20px rgba(106,148,96,0.7)}100%{box-shadow:none}}
+.pdc-avatar{width:34px;height:34px;flex-shrink:0;border-radius:50%;overflow:hidden;border:1px solid var(--border)}
+.pdc-info{flex:1;min-width:0}
+.pdc-name{font-size:0.78rem;color:var(--text);font-weight:600}
+.pdc-team{font-size:0.62rem;color:var(--textm)}
+
+/* RESULTS */
+.result-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;
+  background:var(--bg2);border:1.5px solid var(--border);margin-bottom:4px;animation:rowIn .3s ease-out}
+@keyframes rowIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.rr-avatar{width:30px;height:30px;flex-shrink:0;border-radius:50%;overflow:hidden;border:1px solid var(--border)}
+.rr-place{font-family:'Titan One',sans-serif;font-size:1rem;color:var(--moss3);width:26px;text-align:center;flex-shrink:0}
+.rr-arr{color:var(--sand);font-size:.8rem}
+.rr-name{font-size:.85rem;color:var(--text);font-weight:600;flex:1}
+.rr-team{font-size:0.7rem;flex-shrink:0}
+
+/* SHARE */
+.share-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.share-card{background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;
+  padding:10px;text-align:center;cursor:pointer;transition:all .2s;user-select:none}
+.share-card:hover{border-color:var(--moss2);background:rgba(106,148,96,0.08)}
+.share-card:active{transform:scale(0.97)}
+.sc-avatar{width:50px;height:50px;border-radius:50%;overflow:hidden;border:1.5px solid var(--border);margin:0 auto 4px}
+.sc-name{font-size:0.72rem;color:var(--text);font-weight:600;margin:2px 0}
+.sc-detail{font-size:0.62rem;color:var(--textm);font-style:italic}
+.sc-icon{font-size:0.9rem;margin-top:3px}
+
+/* FISH ENTRY */
+.fish-entry-header{background:linear-gradient(135deg,var(--water) 0%,var(--water2) 100%);
+  border-radius:12px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow)}
+.feh-avatar{width:100px;height:100px;flex-shrink:0;border-radius:50%;overflow:hidden;border:3px solid rgba(255,255,255,0.6);box-shadow:0 2px 12px rgba(0,0,0,0.2)}
+.feh-name{font-family:'Titan One',sans-serif;font-size:1.1rem;color:#fff}
+.feh-detail{font-size:0.72rem;color:rgba(255,255,255,0.75);margin-top:2px}
+.catch-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.catch-item{background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;
+  padding:9px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.catch-fish-type{font-family:'Titan One',sans-serif;font-size:0.78rem;color:var(--moss3);flex-shrink:0;min-width:80px}
+.catch-stats{display:flex;gap:10px;flex:1;flex-wrap:wrap}
+.catch-stat{font-size:0.76rem;color:var(--textm)}
+.catch-stat span{font-weight:700;color:var(--text)}
+.add-fish-form{background:var(--bg2);border:2px dashed var(--sand2);border-radius:12px;padding:14px;margin-bottom:10px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.form-grid .field-wrap{display:flex;flex-direction:column;gap:3px}
+.form-grid label{font-size:0.72rem;font-weight:600;color:var(--textm)}
+.form-grid-full{grid-column:1/-1}
+
+/* LEADERBOARD */
+.leaderboard{display:flex;flex-direction:column;gap:8px}
+.lb-category{background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;overflow:hidden}
+.lb-cat-title{background:linear-gradient(90deg,var(--moss3),var(--moss));
+  padding:8px 12px;font-family:'Titan One',sans-serif;font-size:0.8rem;color:#fff;letter-spacing:2px}
+.lb-rows{padding:6px 0}
+.lb-row{display:flex;align-items:center;gap:8px;padding:6px 12px;border-bottom:1px solid rgba(0,0,0,0.05)}
+.lb-row:last-child{border-bottom:none}
+.lb-rank{font-family:'Titan One',sans-serif;font-size:1rem;width:24px;text-align:center;flex-shrink:0}
+.lb-rank.gold{color:#d4a843}.lb-rank.silver{color:#a0a8b0}.lb-rank.bronze{color:var(--earth2)}
+.lb-team{font-size:0.85rem;font-weight:600;flex:1;color:var(--text)}
+.lb-val{font-family:'Titan One',sans-serif;font-size:0.9rem;color:var(--moss3);flex-shrink:0}
+.lb-sub{font-size:0.7rem;color:var(--textm);flex-shrink:0}
+
+/* PASSWORD MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:300;
+  display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-box{background:var(--card);border-radius:16px;padding:24px;max-width:310px;width:90%;
+  box-shadow:0 20px 60px rgba(0,0,0,0.4);border:1px solid var(--border)}
+.modal-title{font-family:'Titan One',sans-serif;font-size:1rem;color:var(--moss3);margin-bottom:4px}
+.modal-sub{font-size:0.75rem;color:var(--textm);margin-bottom:14px;font-style:italic}
+.modal-err{font-size:0.72rem;color:var(--red);margin-top:5px;display:none;font-style:italic;font-weight:600}
+.modal-err.show{display:block}
+.modal-btns{display:flex;gap:8px;margin-top:14px}
+
+/* BUTTONS */
+.btn{font-family:'Titan One',sans-serif;letter-spacing:1px;border:none;border-radius:10px;cursor:pointer;transition:all .15s;font-size:0.9rem}
+.btn-moss{background:linear-gradient(180deg,var(--moss2) 0%,var(--moss) 100%);color:#fff;
+  padding:12px 20px;box-shadow:0 4px 0 var(--moss3),0 6px 14px rgba(0,0,0,0.2);position:relative;top:0}
+.btn-moss:hover:not(:disabled){filter:brightness(1.05)}
+.btn-moss:active:not(:disabled){top:3px;box-shadow:0 1px 0 var(--moss3)}
+.btn-moss:disabled{background:linear-gradient(180deg,#b0b8a8,#8a9280);color:rgba(255,255,255,0.5);box-shadow:0 2px 0 #607058;cursor:not-allowed}
+.btn-earth{background:linear-gradient(180deg,var(--earth2) 0%,var(--earth) 100%);color:#fff;
+  padding:12px 20px;box-shadow:0 4px 0 #5a3a20,0 6px 14px rgba(0,0,0,0.2);position:relative;top:0}
+.btn-earth:hover:not(:disabled){filter:brightness(1.08)}
+.btn-earth:active:not(:disabled){top:3px;box-shadow:0 1px 0 #5a3a20}
+.btn-earth:disabled{background:linear-gradient(180deg,#b0a898,#8a7868);color:rgba(255,255,255,0.5);cursor:not-allowed}
+.btn-water{background:linear-gradient(180deg,var(--water2) 0%,var(--water) 100%);color:#fff;
+  padding:12px 20px;box-shadow:0 4px 0 #2a5a6a,0 6px 14px rgba(0,0,0,0.2);position:relative;top:0}
+.btn-water:hover:not(:disabled){filter:brightness(1.08)}
+.btn-water:active:not(:disabled){top:3px}
+.btn-outline{background:transparent;color:var(--textm);border:2px solid var(--sand);padding:11px 16px}
+.btn-outline:hover{border-color:var(--moss2);color:var(--moss3)}
+.btn-sm{font-size:0.75rem;padding:7px 14px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.w100{width:100%}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--red);color:#fff;font-family:'Cabin',sans-serif;font-size:0.85rem;font-weight:600;
+  padding:12px 20px;border-radius:24px;box-shadow:0 4px 20px rgba(0,0,0,0.25);
+  z-index:500;transition:transform .3s ease-out;white-space:nowrap;max-width:90vw;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.success{background:var(--moss)}.toast.info{background:var(--water)}
+.loading{text-align:center;padding:20px;color:var(--textm);font-style:italic;font-size:0.85rem}
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--sand2);
+  border-top-color:var(--moss2);border-radius:50%;animation:spin .7s linear infinite;margin-right:6px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.flash{position:fixed;inset:0;background:rgba(144,238,96,0.15);pointer-events:none;opacity:0;z-index:200;transition:opacity .08s}
+.flash.on{opacity:1}
+.dot{position:fixed;width:8px;height:8px;border-radius:50%;pointer-events:none;z-index:201;animation:df linear forwards}
+@keyframes df{0%{transform:translateY(-10px) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(900deg);opacity:0}}
+.screen{display:none}
+.screen.active{display:block;animation:fadeUp .35s ease-out}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.empty-hint{text-align:center;color:var(--sand);font-size:.75rem;letter-spacing:2px;padding:14px 0;font-style:italic}
+.mt8{margin-top:8px}.mt12{margin-top:12px}
+.back-btn{display:flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--textm);
+  cursor:pointer;margin-bottom:10px;width:fit-content;padding:4px 2px;font-family:'Cabin',sans-serif}
+.back-btn:hover{color:var(--moss3)}
+
+/* REPLAY */
+.replay-result-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;
+  background:var(--bg2);border:1.5px solid var(--border);margin-bottom:5px;
+  opacity:0;transform:translateY(8px);transition:all 0.4s ease-out}
+.replay-result-row.show{opacity:1;transform:translateY(0)}
+.confetti-canvas{position:fixed;inset:0;pointer-events:none;z-index:199}
+
+.section-hint{font-size:0.72rem;color:var(--textm);font-style:italic;margin-bottom:10px;padding:6px 10px;
+  background:rgba(106,148,96,0.08);border-radius:7px;border-left:3px solid var(--moss2)}
+
+/* MAP AVATAR OVERLAY */
+.lake-map-container{position:relative;border-radius:10px;overflow:hidden;border:2px solid var(--border);cursor:zoom-in}
+.lake-map-container img{width:100%;height:auto;display:block}
+
+.map-overlay{position:absolute;inset:0;pointer-events:none}
+.map-pin{position:absolute;transform:translate(-50%,-50%);
+  display:flex;flex-direction:column;align-items:center;gap:1px;
+  pointer-events:auto;cursor:pointer;z-index:10}
+.map-pin-avatar{width:26px;height:26px;border-radius:50%;overflow:hidden;
+  border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,0.6);background:var(--bg2);flex-shrink:0}
+.map-pin-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.map-pin-nr{background:rgba(0,0,0,0.75);color:#fff;font-size:0.42rem;
+  font-family:'Titan One',sans-serif;padding:1px 3px;border-radius:3px;
+  line-height:1.2;text-align:center}
+.map-pin-smallname{background:rgba(255,255,255,0.88);color:var(--moss3);
+  font-size:0.48rem;font-family:'Cabin',sans-serif;font-weight:700;
+  padding:1px 4px;border-radius:4px;white-space:nowrap;
+  max-width:52px;overflow:hidden;text-overflow:ellipsis;text-align:center;
+  box-shadow:0 1px 3px rgba(0,0,0,0.3);margin-top:1px}
+.map-pin-tooltip{position:absolute;bottom:calc(100% + 4px);left:50%;
+  transform:translateX(-50%);background:var(--moss3);color:#fff;
+  font-size:0.72rem;font-family:'Cabin',sans-serif;font-weight:600;
+  padding:4px 8px;border-radius:7px;white-space:nowrap;
+  box-shadow:0 2px 8px rgba(0,0,0,0.4);pointer-events:none;
+  opacity:0;transition:opacity .15s;z-index:20}
+.map-pin-tooltip::after{content:'';position:absolute;top:100%;left:50%;
+  transform:translateX(-50%);border:4px solid transparent;
+  border-top-color:var(--moss3)}
+.map-pin:hover .map-pin-tooltip,.map-pin.show-tt .map-pin-tooltip{opacity:1}
+
+/* Lightbox overlay */
+.lb-map-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:auto}
+.lb-map-pin{position:absolute;transform:translate(-50%,-50%);
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  pointer-events:auto;cursor:pointer;z-index:10}
+.lb-map-pin-avatar{width:38px;height:38px;border-radius:50%;overflow:hidden;
+  border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.6);background:var(--bg2)}
+.lb-map-pin-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.lb-map-pin-nr{background:rgba(0,0,0,0.75);color:#fff;font-size:0.55rem;
+  font-family:'Titan One',sans-serif;padding:1px 4px;border-radius:3px;line-height:1.2;text-align:center}
+.lb-map-pin-tooltip{position:absolute;bottom:calc(100% + 5px);left:50%;
+  transform:translateX(-50%);background:var(--moss3);color:#fff;
+  font-size:0.82rem;font-family:'Cabin',sans-serif;font-weight:600;
+  padding:5px 10px;border-radius:8px;white-space:nowrap;
+  box-shadow:0 2px 10px rgba(0,0,0,0.5);pointer-events:none;
+  opacity:0;transition:opacity .15s;z-index:20}
+.lb-map-pin-tooltip::after{content:'';position:absolute;top:100%;left:50%;
+  transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--moss3)}
+.lb-map-pin-name{background:rgba(0,0,0,0.72);color:#fff;font-size:0.65rem;
+  font-family:'Cabin',sans-serif;font-weight:700;padding:2px 7px;border-radius:10px;
+  white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis;text-align:center;
+  margin-top:2px}
+.lb-map-pin:hover .lb-map-pin-tooltip,.lb-map-pin.show-tt .lb-map-pin-tooltip{opacity:1}
+
+/* TOOLTIP */
+.tooltip-wrap{position:relative;display:inline-flex;align-items:center;gap:5px;cursor:help}
+.tooltip-icon{width:16px;height:16px;border-radius:50%;background:var(--moss2);color:#fff;
+  font-size:0.65rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-style:normal;line-height:1}
+.tooltip-box{position:absolute;left:0;top:calc(100% + 8px);
+  background:var(--moss3);color:#fff;font-size:0.75rem;line-height:1.5;
+  padding:10px 12px;border-radius:10px;width:260px;z-index:100;
+  box-shadow:0 4px 20px rgba(0,0,0,0.3);pointer-events:none;
+  opacity:0;transform:translateY(-4px);transition:opacity .2s,transform .2s;
+  font-style:normal;font-weight:400}
+.tooltip-box::before{content:'';position:absolute;bottom:100%;left:10px;
+  border:6px solid transparent;border-bottom-color:var(--moss3)}
+.tooltip-wrap:hover .tooltip-box,.tooltip-wrap:focus-within .tooltip-box{opacity:1;transform:translateY(0)}
+/* Mobile: tap to show */
+.tooltip-box.show{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+<div class="flash" id="flash"></div>
+<div class="toast" id="toast"></div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <span class="lb-close">✕</span>
+  <div style="position:relative;display:inline-block;max-width:98vw;max-height:96vh">
+  <img id="lightboxImg" alt="Mapa" style="max-width:98vw;max-height:96vh;border-radius:8px;display:block">
+  <div class="lb-map-overlay" id="lbMapOverlay"></div>
+</div>
+</div>
+
+<!-- PW MODAL -->
+<div class="modal-overlay" id="pwModal" style="display:none">
+  <div class="modal-box">
+    <div class="modal-title">🔐 Admin</div>
+    <div class="modal-sub" id="lbl-pw-sub">Proszę podać hasło</div>
+    <input class="fish-input" type="password" id="pwInput" placeholder="••••"
+      onkeydown="if(event.key==='Enter')checkPW()">
+    <div class="modal-err" id="pwErr">Błędne hasło!</div>
+    <div class="modal-btns">
+      <button class="btn btn-moss w100" onclick="checkPW()">OK</button>
+      <button class="btn btn-outline" onclick="document.getElementById('pwModal').style.display='none'">✕</button>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="hdr-inner">
+      <div class="logo-wrap"><img id="logoImg" alt="Logo"></div>
+      <div class="hdr-text">
+        <div class="hdr-title">KarPika</div>
+        <div class="hdr-sub">Łowisko Podolsze</div>
+      </div>
+      <div class="hdr-right">
+        <div class="lang-row">
+          <button class="lang-btn" id="btnDe" onclick="setLang('de')">DE</button>
+          <button class="lang-btn active" id="btnPl" onclick="setLang('pl')">PL</button>
+        </div>
+        <button class="admin-btn" onclick="openAdmin()">⚙️ Admin</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ DASHBOARD ══ -->
+  <div class="screen active" id="screenDashboard">
+    <div class="info-bar">
+      <span class="ib-item">🥇 <span data-i="ib1">Najcięższa ryba</span></span>
+      <span class="ib-sep">·</span>
+      <span class="ib-item">⚖️ <span data-i="ib2">Suma wagi</span></span>
+      <span class="ib-sep">·</span>
+      <span class="ib-item">🔢 <span data-i="ib3">Liczba ryb</span></span>
+      <span class="ib-sep">·</span>
+      <span class="ib-item">📏 <span data-i="ib4">Najdłuższa</span></span>
+    </div>
+    <div class="card">
+      <div class="card-title">🗺️ <span data-i="mapTitle">Mapa łowiska</span></div>
+      <div class="lake-map-container" id="lakeMapContainer" onclick="openLightbox()">
+        <img id="lakeImg" alt="Mapa">
+        <div class="map-overlay" id="mapOverlay"></div>
+        <div class="lake-map-caption" data-i="mapCaption">Łowisko Podolsze · Miejsca 1–26 · Kliknij aby powiększyć</div>
+      </div>
+    </div>
+    <div id="dashContent"><div class="loading"><span class="spinner"></span></div></div>
+  </div>
+
+  <!-- ══ ARCHIVE ══ -->
+  <div class="screen" id="screenArchive">
+    <div class="back-btn" onclick="showScreen('screenDashboard')">← <span data-i="backDash">Dashboard</span></div>
+    <div class="card">
+      <div class="card-title">📅 <span data-i="archiveTitle">Wszystkie eventy</span></div>
+      <div id="pinStatus" style="font-size:0.75rem;color:var(--textm);font-style:italic;margin-bottom:10px;padding:8px 10px;background:rgba(106,148,96,0.08);border-radius:7px;border-left:3px solid var(--moss2);display:none"></div>
+      <div id="archiveList"><div class="loading"><span class="spinner"></span></div></div>
+    </div>
+  </div>
+
+  <!-- ══ PUBLIC REPLAY ══ -->
+  <div class="screen" id="screenReplay">
+    <div class="back-btn" onclick="showScreen('screenDashboard')">← <span data-i="backDash">Dashboard</span></div>
+    <div class="card" id="replayHeader">
+      <div style="text-align:center;padding:8px 0">
+        <div style="font-family:'Titan One',sans-serif;font-size:1.3rem;color:var(--moss3)" id="replayEventName">–</div>
+        <div style="font-size:0.72rem;color:var(--textm);margin-top:3px" id="replayEventDate">–</div>
+        <div id="replaySeedBox" style="margin-top:8px;font-size:0.72rem;color:var(--textm);display:none">
+          🔐 <span data-i="seedCardLabel">Kod</span>
+          <span class="tooltip-wrap" onclick="this.querySelector('.tooltip-box').classList.toggle('show')" style="vertical-align:middle">
+            <span class="tooltip-icon">?</span>
+            <span class="tooltip-box" data-i="seedTooltip" style="left:auto;right:0;top:calc(100% + 8px)"></span>
+          </span>:
+          <span id="replaySeed" style="font-weight:700;color:var(--moss3);word-break:break-all"></span>
+          <button class="btn btn-outline btn-sm" style="margin-top:6px;display:block;margin-left:auto;margin-right:auto" onclick="verifyReplay()">✓ <span data-i="verifyBtn">Sprawdź</span></button>
+          <span id="replayVerifyResult" style="display:block;font-weight:700;margin-top:4px"></span>
+        </div>
+      </div>
+    </div>
+    <!-- Replay machine -->
+    <div class="machine" id="replayMachine">
+      <div class="machine-top">
+        <div class="mt-txt">🐟 KarPika</div>
+        <div class="leds"><div class="led"></div><div class="led"></div><div class="led"></div></div>
+        <div class="mt-txt" id="replayStatus">▶ REPLAY</div>
+      </div>
+      <div class="machine-status">
+        <span class="ms-label" data-i="results">Wyniki losowania</span>
+        <span class="ms-val" id="replayMs">– – –</span>
+      </div>
+      <div class="reel-scroll"><div class="reel-track" id="replayReelTrack"></div></div>
+      <div style="padding:10px 14px 14px;display:flex;gap:8px">
+        <button class="btn btn-moss w100" id="replayPlayBtn" onclick="startReplay()">
+          ▶ <span data-i="spinBtn">LOSUJ!</span>
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="stopReplay()" id="replayStopBtn" style="display:none">⏹</button>
+      </div>
+    </div>
+    <!-- Results -->
+    <div class="card">
+      <div class="card-title">📋 <span data-i="results">Wyniki losowania</span></div>
+      <div id="replayResults"></div>
+    </div>
+    <div class="btn-row mt8">
+      <button class="btn btn-water btn-sm" onclick="showLeaderboard(replaySessionId)">🏆 Ranking</button>
+      <button class="btn btn-outline btn-sm" onclick="showScreen('screenDashboard')">← Dashboard</button>
+    </div>
+  </div>
+
+  <!-- ══ ADMIN SETUP ══ -->
+  <div class="screen" id="screenSetup">
+    <div class="back-btn" onclick="showScreen('screenDashboard')">← <span data-i="backDash">Dashboard</span></div>
+    <div class="card">
+      <div class="card-title">⚙️ <span data-i="setupTitle">Ustawienia zawodów</span></div>
+      <div class="section-hint" data-i="setupHint">Wypełnij wszystkie pola, przypisz osoby do teamów i ustaw ewentualne handicapy.</div>
+      <div class="form-row">
+        <label class="form-label" data-i="eventName">Nazwa eventu</label>
+        <div class="field-wrap">
+          <input class="fish-input" id="inpEventName" type="text" placeholder="np. Zawody letnie 2025">
+          <div class="err-msg" id="err-event-name"></div>
+        </div>
+      </div>
+      <div class="form-row" style="align-items:flex-start">
+        <div class="form-label" style="display:flex;align-items:center;gap:5px;padding-top:9px">
+          <span data-i="seedLabel">Wspólny kod losowania</span>
+          <span class="tooltip-wrap" onclick="this.querySelector('.tooltip-box').classList.toggle('show')">
+            <span class="tooltip-icon">?</span>
+            <span class="tooltip-box" data-i="seedTooltip"></span>
+          </span>
+        </div>
+        <div class="field-wrap">
+          <input class="fish-input" id="inpSeed" type="text" placeholder="np. liczba ustalona wspólnie">
+          <div style="font-size:0.7rem;color:var(--textm);margin-top:3px;font-style:italic" data-i="seedHint"></div>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label" data-i="numPersons">Liczba osób</label>
+        <div class="field-wrap">
+          <select class="fish-select" id="selPersonCount" onchange="rebuildPersonSetup()">
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+            <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+            <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+            <option value="13">13</option><option value="14">14</option><option value="15">15</option>
+            <option value="16">16</option><option value="17">17</option><option value="18">18</option>
+            <option value="19">19</option><option value="20">20</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label" data-i="numTeams">Liczba teamów</label>
+        <div class="field-wrap">
+          <select class="fish-select" id="selTeamCount" onchange="rebuildPersonSetup()">
+            <option value="1">1</option><option value="2" selected>2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+            <option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
+          </select>
+          <div style="font-size:0.7rem;color:var(--textm);margin-top:3px;font-style:italic" data-i="teamHint">Przypisz każdą osobę do teamu. Team dostaje sąsiadujące miejsca (dowolny rozmiar).</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label" data-i="placesRange">Miejsca od / do</label>
+        <div class="field-wrap">
+          <div class="places-inline">
+            <input class="fish-input" type="number" id="inpPlaceFrom" value="1" min="1" max="99">
+            <span class="places-sep">–</span>
+            <input class="fish-input" type="number" id="inpPlaceTo" value="26" min="1" max="99">
+          </div>
+          <div class="err-msg" id="err-places"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🎣 <span data-i="personsTitle">Osoby i teamy</span></div>
+      <div class="persons-list" id="personsSetupList"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-moss w100" onclick="startDraw()"><span data-i="startDraw">🎰 Rozpocznij losowanie</span></button>
+    </div>
+
+    <!-- DANGER ZONE -->
+    <div class="card" style="margin-top:20px;border-color:rgba(192,57,43,0.3);background:rgba(192,57,43,0.03)">
+      <div class="card-title" style="color:var(--red)">⚠️ <span data-i="dangerTitle">Strefa niebezpieczna</span></div>
+      <p style="font-size:0.78rem;color:var(--textm);font-style:italic;margin-bottom:12px" data-i="dangerHint">Usuwa wszystkie eventy i połowy. Nie da się cofnąć.</p>
+      <button class="btn btn-sm w100" id="btnWipeDb" onclick="wipeDatabase(this)"
+        style="background:transparent;color:var(--red);border:2px solid var(--red);padding:12px;font-family:'Titan One',sans-serif;letter-spacing:1px;border-radius:10px;cursor:pointer">
+        🗑️ <span data-i="wipeDb">Wyczyść całą bazę</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ DRAW ══ -->
+  <div class="screen" id="screenDraw">
+    <div class="back-btn" onclick="showScreen('screenSetup')">← <span data-i="backSetup">Ustawienia</span></div>
+    <div class="card">
+      <div class="card-title">👥 <span data-i="personsDraw">Osoby</span></div>
+      <div class="persons-draw-grid" id="personsDrawGrid"></div>
+    </div>
+    <div class="machine">
+      <div class="machine-top">
+        <div class="mt-txt">🐟 KarPika</div>
+        <div class="leds"><div class="led"></div><div class="led"></div><div class="led"></div></div>
+        <div class="mt-txt">JACKPOT</div>
+      </div>
+      <div class="machine-status">
+        <span class="ms-label" data-i="drawStatus">Gotowy</span>
+        <span class="ms-val" id="msVal">– – –</span>
+      </div>
+      <div class="reel-scroll"><div class="reel-track" id="reelTrack"></div></div>
+      <div class="lever-zone">
+        <div class="lever-base"><div class="lever-arm" id="leverArm"><div class="lever-ball"></div></div></div>
+      </div>
+      <div class="machine-btns">
+        <button class="btn btn-moss w100" id="btnSpin" onclick="doSpin()"><span data-i="spinBtn">🎰 LOSUJ!</span></button>
+        <button class="btn btn-outline" onclick="resetDraw()">↺</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 <span data-i="results">Wyniki losowania</span></div>
+      <div id="resultsGrid"><div class="empty-hint">–</div></div>
+    </div>
+    <div class="card" id="seedCard" style="display:none">
+      <div class="card-title">🔐 <span data-i="seedCardTitle">Kod losowania (dowód)</span></div>
+      <div style="background:var(--bg2);border:1.5px solid var(--moss2);border-radius:8px;padding:10px 12px">
+        <div style="display:flex;align-items:center;gap:5px;font-size:0.7rem;color:var(--textm);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">
+          <span data-i="seedCardLabel">Wspólny kod / Seed</span>
+          <span class="tooltip-wrap" onclick="this.querySelector('.tooltip-box').classList.toggle('show')">
+            <span class="tooltip-icon">?</span>
+            <span class="tooltip-box" data-i="seedTooltip">Jak to działa? Wszyscy uczestnicy podają liczbę → zsumuj je i wpisz tutaj.</span>
+          </span>
+        </div>
+        <div style="font-family:'Titan One',sans-serif;font-size:1rem;color:var(--moss3);word-break:break-all" id="seedDisplay">–</div>
+        <div style="font-size:0.7rem;color:var(--textm);font-style:italic;margin-top:6px" data-i="seedCardHint">Z tym kodem każdy może sprawdzić, że losowanie nie było manipulowane.</div>
+        <button class="btn btn-outline btn-sm" style="margin-top:8px" onclick="verifyAndShow()">✓ <span data-i="verifyBtn">Sprawdź losowanie</span></button>
+        <span id="verifyResult" style="margin-left:8px;font-weight:700;font-size:0.85rem"></span>
+      </div>
+    </div>
+    <div class="card" id="shareCard" style="display:none">
+      <div class="card-title">📲 <span data-i="shareTitle">Wyślij linki</span></div>
+      <p style="font-size:0.75rem;color:var(--textm);margin-bottom:10px;font-style:italic" data-i="shareDesc">Kliknij osobę → skopiuj link → wklej w WhatsApp</p>
+      <div class="share-grid" id="shareGrid"></div>
+    </div>
+    <div class="btn-row mt8">
+      <button class="btn btn-earth btn-sm" id="btnPdf" onclick="makePDF()" disabled>📄 PDF</button>
+      <button class="btn btn-water btn-sm" id="btnLb" onclick="showLeaderboard(currentSessionId)" disabled>🏆 Ranking</button>
+      <button class="btn btn-outline btn-sm" onclick="showScreen('screenDashboard')">← Dashboard</button>
+    </div>
+  </div>
+
+  <!-- ══ MAP EDIT ══ -->
+  <div class="screen" id="screenMapEdit">
+    <div class="back-btn" onclick="showScreen('screenLinks')">← <span data-i="shareTitle">Linki</span></div>
+    <div class="card">
+      <div class="card-title">🗺️ <span id="lbl-mapedit-title">Pozycje na mapie</span></div>
+      <p style="font-size:0.75rem;color:var(--textm);font-style:italic;margin-bottom:12px" id="lbl-mapedit-hint">
+        Ustaw X% i Y% dla każdej osoby (0–100). Podgląd aktualizuje się na żywo.
+      </p>
+      <!-- Preview map small -->
+      <div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--border);margin-bottom:14px;cursor:pointer" onclick="openLightbox()">
+        <img id="mapEditPreview" style="width:100%;display:block" alt="Mapa">
+        <div class="map-overlay" id="mapEditOverlay"></div>
+      </div>
+      <!-- Coordinate table -->
+      <div id="mapCoordTable"></div>
+      <div class="btn-row mt8">
+        <button class="btn btn-moss btn-sm" onclick="saveMapCoords()">💾 <span id="lbl-save-coords">Zapisz pozycje</span></button>
+        <button class="btn btn-outline btn-sm" onclick="resetMapCoords()">↺ <span id="lbl-reset-coords">Resetuj</span></button>
+      </div>
+    </div>
+    <!-- Seed Demo -->
+    <div class="card">
+      <div class="card-title">🔐 <span id="lbl-seed-demo-title">Demonstracja kodu losowania</span></div>
+      <p style="font-size:0.75rem;color:var(--textm);font-style:italic;margin-bottom:10px" id="lbl-seed-demo-hint">
+        Zmień kod aby pokazać inny wynik. Przywróć oryginalny kod aby udowodnić, że losowanie nie było manipulowane.
+      </p>
+      <div style="background:var(--bg2);border-radius:8px;padding:12px;margin-bottom:10px">
+        <div style="font-size:0.7rem;color:var(--textm);margin-bottom:4px" id="lbl-orig-seed">Oryginalny kod:</div>
+        <div style="font-family:'Titan One',sans-serif;font-size:0.9rem;color:var(--moss3);word-break:break-all;margin-bottom:8px" id="origSeedDisplay">–</div>
+        <div style="font-size:0.7rem;color:var(--textm);margin-bottom:4px" id="lbl-test-seed">Testowy kod:</div>
+        <input class="fish-input" id="demoSeedInput" type="text" placeholder="Wpisz inny kod...">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-water btn-sm" onclick="runDemoSeed()">▶ <span id="lbl-run-demo">Pokaż wynik</span></button>
+        <button class="btn btn-moss btn-sm" onclick="restoreOrigSeed()">↩ <span id="lbl-restore-seed">Przywróć oryginalny</span></button>
+      </div>
+      <div id="demoSeedResult" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- ══ SHARE LINKS (standalone) ══ -->
+  <div class="screen" id="screenLinks">
+    <div class="back-btn" onclick="showScreen('screenDashboard')">← <span data-i="backDash">Dashboard</span></div>
+    <div class="card">
+      <div class="card-title">📋 <span data-i="results">Wyniki losowania</span></div>
+      <div id="linksResults"></div>
+    </div>
+    <div class="card" id="linksShareCard">
+      <div class="card-title">📲 <span data-i="shareTitle">Wyślij linki</span></div>
+      <p style="font-size:0.75rem;color:var(--textm);margin-bottom:10px;font-style:italic" data-i="shareDesc">Kliknij osobę → skopiuj link → wklej w WhatsApp</p>
+      <div class="share-grid" id="linksShareGrid"></div>
+    </div>
+    <div class="card" id="linksSeedCard" style="display:none">
+      <div class="card-title">🔐 <span data-i="seedCardTitle">Kod losowania (dowód)</span></div>
+      <div style="background:var(--bg2);border:1.5px solid var(--moss2);border-radius:8px;padding:10px 12px">
+        <div style="display:flex;align-items:center;gap:5px;font-size:0.7rem;color:var(--textm);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">
+          <span data-i="seedCardLabel">Wspólny kod / Seed</span>
+        </div>
+        <div style="font-family:'Titan One',sans-serif;font-size:1rem;color:var(--moss3);word-break:break-all" id="linksSeedDisplay">–</div>
+        <div style="font-size:0.7rem;color:var(--textm);font-style:italic;margin-top:6px" data-i="seedCardHint"></div>
+      </div>
+    </div>
+    <div class="btn-row mt8">
+      <button class="btn btn-earth btn-sm" onclick="makePDF()">📄 PDF</button>
+      <button class="btn btn-water btn-sm" onclick="showLeaderboard(currentSessionId)">🏆 Ranking</button>
+      <button class="btn btn-outline btn-sm" onclick="requireAdmin(()=>{openManage();})">✏️ <span data-i="manageTitle">Zarządzaj</span></button>
+      <button class="btn btn-outline btn-sm" onclick="requireAdmin(()=>{openMapEdit();})">🗺️ Mapa</button>
+      <button class="btn btn-outline btn-sm" onclick="showScreen('screenDashboard')">← Dashboard</button>
+    </div>
+  </div>
+
+  <!-- ══ ADMIN MANAGE (post-draw) ══ -->
+  <div class="screen" id="screenManage">
+    <div class="back-btn" onclick="showScreen('screenLinks')">← <span data-i="shareTitle">Wyślij linki</span></div>
+    <div class="card">
+      <div class="card-title">✏️ <span data-i="manageTitle">Zarządzaj osobami</span></div>
+      <div class="section-hint" data-i="manageHint">Zmień miejsce lub team, dodaj nową osobę lub usuń. Zmiany zapisują się automatycznie.</div>
+      <div id="manageList"></div>
+    </div>
+    <!-- Add person form -->
+    <div class="card">
+      <div class="card-title">➕ <span data-i="addPersonTitle">Dodaj osobę</span></div>
+      <div class="form-row">
+        <label class="form-label" data-i="personName">Imię i nazwisko</label>
+        <div class="field-wrap"><input class="fish-input" id="newPersonName" type="text" placeholder="Imię Nazwisko"></div>
+      </div>
+      <div class="form-row">
+        <label class="form-label" data-i="teamLabel">Team</label>
+        <div class="field-wrap"><select class="fish-select" id="newPersonTeam"></select></div>
+      </div>
+      <div class="form-row">
+        <label class="form-label" data-i="placeLabel2">Miejsce</label>
+        <div class="field-wrap">
+          <input class="fish-input" id="newPersonPlace" type="number" min="1" max="99" placeholder="np. 5">
+          <div class="err-msg" id="err-new-person"></div>
+        </div>
+      </div>
+      <button class="btn btn-moss w100" onclick="saveNewPerson()"><span data-i="saveBtn">➕ Dodaj osobę</span></button>
+    </div>
+    <div class="card" style="border-color:rgba(74,103,65,0.3)">
+      <div class="card-title">🔐 <span id="lbl-seed-demo-title2">Demonstracja kodu losowania</span></div>
+      <p style="font-size:0.75rem;color:var(--textm);font-style:italic;margin-bottom:10px">
+        <span id="lbl-orig-seed2">Oryginalny kod</span>:
+        <strong id="origSeedDisplay2" style="color:var(--moss3);word-break:break-all">–</strong>
+      </p>
+      <div class="form-row">
+        <label class="form-label" id="lbl-test-seed2">Testowy kod</label>
+        <div class="field-wrap">
+          <input class="fish-input" id="demoSeedInput2" type="text" placeholder="Wpisz inny kod...">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-water btn-sm" onclick="runDemoSeed2()">▶ <span id="lbl-run-demo2">Pokaż wynik</span></button>
+        <button class="btn btn-moss btn-sm" onclick="restoreOrigSeed2()">↩ <span id="lbl-restore-seed2">Przywróć</span></button>
+      </div>
+      <div id="demoSeedResult2" style="margin-top:10px"></div>
+    </div>
+    <div class="btn-row mt8">
+      <button class="btn btn-water btn-sm" onclick="showScreen('screenLinks')">← <span data-i="shareTitle">Linki</span></button>
+      <button class="btn btn-outline btn-sm" onclick="showScreen('screenDashboard')">← Dashboard</button>
+    </div>
+  </div>
+
+  <!-- ══ FISH ENTRY ══ -->
+  <div class="screen" id="screenFish">
+    <div class="fish-entry-header">
+      <div class="feh-avatar" id="fehAvatar">🎣</div>
+      <div>
+        <div class="feh-name" id="fehName">–</div>
+        <div class="feh-detail" id="fehDetail">–</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🐟 <span data-i="myCatches">Moje połowy</span></div>
+      <div class="catch-list" id="catchList"><div class="loading"><span class="spinner"></span></div></div>
+      <div id="catchEmpty" style="display:none" class="empty-hint" data-i="noCatches">Brak połowów</div>
+    </div>
+    <div class="card">
+      <div class="card-title">➕ <span data-i="addFish">Dodaj rybę</span></div>
+      <div class="add-fish-form">
+        <div class="form-grid">
+          <div class="field-wrap form-grid-full">
+            <label data-i="fishTypeLbl">Gatunek</label>
+            <select class="fish-select" id="fishType"></select>
+          </div>
+          <div class="field-wrap form-grid-full" id="customTypeWrap" style="display:none">
+            <label data-i="customType">Nazwa gatunku</label>
+            <input class="fish-input" id="customFishType" type="text" placeholder="np. Amur...">
+          </div>
+          <div class="field-wrap">
+            <label data-i="weight">Waga (kg)</label>
+            <input class="fish-input" id="fishWeight" type="number" step="0.01" min="0" placeholder="0.00">
+          </div>
+          <div class="field-wrap">
+            <label data-i="length">Długość (cm)</label>
+            <input class="fish-input" id="fishLength" type="number" step="0.1" min="0" placeholder="0.0">
+          </div>
+        </div>
+        <div class="err-msg" id="err-fish"></div>
+        <button class="btn btn-moss w100" onclick="addCatch()"><span data-i="saveFish">💾 Zapisz rybę</span></button>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-water btn-sm" onclick="showLeaderboard(currentSessionId)">🏆 Ranking</button>
+      <button class="btn btn-outline btn-sm" onclick="showScreen('screenDashboard')">← Dashboard</button>
+    </div>
+  </div>
+
+  <!-- ══ LEADERBOARD ══ -->
+  <div class="screen" id="screenLeaderboard">
+    <div class="back-btn" id="lbBackBtn">← <span data-i="back">Wróć</span></div>
+    <div class="card">
+      <div class="card-title">🏆 <span data-i="lbTitle">Ranking</span></div>
+      <div id="lbContent"><div class="loading"><span class="spinner"></span></div></div>
+    </div>
+    <div class="btn-row mt8">
+      <button class="btn btn-earth btn-sm" onclick="exportLbPDF()">📄 PDF Rankingu</button>
+      <button class="btn btn-outline btn-sm" onclick="showScreen('screenDashboard')">← Dashboard</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SU='https://ligxitetjetefniprcsp.supabase.co', SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpZ3hpdGV0amV0ZWZuaXByY3NwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4Mzc5OTcsImV4cCI6MjA5NTQxMzk5N30.RWrphuMk5AZtDbHZbeUtlw472Q9u3egRpCy6VtgcQZM';
+document.getElementById('logoImg').src='data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiID8+CjxzdmcgYmFzZVByb2ZpbGU9InRpbnkiIGhlaWdodD0iMTUzNiIgdmVyc2lvbj0iMS4yIiB3aWR0aD0iMjA0OCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczpldj0iaHR0cDovL3d3dy53My5vcmcvMjAwMS94bWwtZXZlbnRzIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+PGRlZnMgLz48cGF0aCBkPSJNIDEwMjIsNDk1IEwgMTAyMSw0OTYgTCAxMDE3LDQ5NiBMIDEwMTYsNDk3IEwgMTAxMSw0OTcgTCAxMDEwLDQ5OCBMIDEwMDcsNDk4IEwgMTAwNiw0OTkgTCAxMDA1LDQ5OSBMIDEwMDMsNTAxIEwgMTAwMSw1MDEgTCAxMDAwLDUwMiBMIDk5OSw1MDIgTCA5OTgsNTAzIEwgOTk3LDUwMyBMIDk5Myw1MDcgTCA5OTIsNTA3IEwgOTkxLDUwOCBMIDk5MSw1MDkgTCA5ODksNTExIEwgOTg4LDUxMSBMIDk4Niw1MTMgTCA5ODYsNTE0IEwgOTgyLDUxOCBMIDk4Miw1MTkgTCA5ODAsNTIxIEwgOTgwLDUyMiBMIDk3OSw1MjMgTCA5NzksNTI0IEwgOTc3LDUyNiBMIDk3Nyw1MjcgTCA5NzUsNTI5IEwgOTc1LDUzMCBMIDk3NCw1MzEgTCA5NzQsNTMzIEwgOTczLDUzNCBMIDk3Myw1MzUgTCA5NzIsNTM2IEwgOTcyLDUzOCBMIDk3MSw1MzkgTCA5NzEsNTQwIEwgOTcwLDU0MSBMIDk3MCw1NDMgTCA5NjksNTQ0IEwgOTY5LDU0OCBMIDk2OCw1NDkgTCA5NjgsNTUzIEwgOTY3LDU1NCBMIDk2Nyw1NzIgTCA5NjgsNTczIEwgOTY4LDU3OSBMIDk2OSw1ODAgTCA5NjksNTg0IEwgOTcwLDU4NSBMIDk3MCw1ODggTCA5NzEsNTg5IEwgOTcxLDU5MCBMIDk3Miw1OTEgTCA5NzIsNTkzIEwgOTczLDU5NCBMIDk3Myw1OTUgTCA5NzQsNTk2IEwgOTc0LDU5OCBMIDk3NSw1OTkgTCA5NzUsNjAwIEwgOTc3LDYwMiBMIDk3Nyw2MDMgTCA5NzgsNjA0IEwgOTc4LDYwNiBMIDk4MSw2MDkgTCA5ODEsNjExIEwgOTgzLDYxMyBMIDk4Myw2MTQgTCA5ODUsNjE2IEwgOTg1LDYxNyBMIDk4Nyw2MTkgTCA5ODcsNjIwIEwgOTkxLDYyNCBMIDk5MSw2MjUgTCA5OTMsNjI3IEwgOTkzLDYyOCBMIDEwMDgsNjQzIEwgMTAwOSw2NDMgTCAxMDE0LDY0OCBMIDEwMTUsNjQ4IEwgMTAyMCw2NTMgTCAxMDIxLDY1MyBMIDEwMjMsNjU1IEwgMTAyMyw2NTYgTCAxMDI0LDY1NiBMIDEwMjUsNjU3IEwgMTAyNiw2NTcgTCAxMDM4LDY2OSBMIDEwMzgsNjcwIEwgMTA0Miw2NzQgTCAxMDQyLDY3NiBMIDEwNDAsNjc4IEwgMTAzOCw2NzggTCAxMDM3LDY3OSBMIDEwMzQsNjc5IEwgMTAzMyw2ODAgTCAxMDI5LDY4MCBMIDEwMjgsNjgxIEwgMTAyNyw2ODEgTCAxMDI2LDY4MiBMIDEwMjQsNjgyIEwgMTAyNCw2ODMgTCAxMDIyLDY4NSBMIDEwMjEsNjg1IEwgMTAyMCw2ODYgTCAxMDExLDY4NiBMIDEwMTAsNjg1IEwgMTAwMSw2ODUgTCA5OTgsNjg4IEwgOTk4LDY5MCBMIDEwMDEsNjkzIEwgMTAwMiw2OTMgTCAxMDAzLDY5NCBMIDEwMDUsNjk0IEwgMTAwNiw2OTUgTCAxMDA4LDY5NSBMIDEwMDksNjk2IEwgMTAxMSw2OTYgTCAxMDEyLDY5NyBMIDEwMTQsNjk3IEwgMTAxNSw2OTggTCAxMDE2LDY5OCBMIDEwMTcsNjk5IEwgMTAxNyw3MDAgTCAxMDE4LDcwMSBMIDEwMTgsNzAzIEwgMTAxOSw3MDQgTCAxMDE5LDcwNyBMIDEwMjAsNzA4IEwgMTAyMCw3MDkgTCAxMDIxLDcxMCBMIDEwMjEsNzExIEwgMTAyMiw3MTIgTCAxMDIyLDcxMyBMIDEwMjQsNzE1IEwgMTAyNCw3MTYgTCAxMDI1LDcxNyBMIDEwMjYsNzE3IEwgMTAzMCw3MjEgTCAxMDMxLDcyMSBMIDEwMzMsNzIzIEwgMTAzNSw3MjMgTCAxMDM3LDcyNSBMIDEwMzgsNzI1IEwgMTAzOSw3MjYgTCAxMDQwLDcyNiBMIDEwNDMsNzI5IEwgMTA0Myw3NDAgTCAxMDQ0LDc0MSBMIDEwNDQsNzQzIEwgMTA0NSw3NDQgTCAxMDQ1LDc0NiBMIDEwNDYsNzQ3IEwgMTA0Niw3NDkgTCAxMDQ3LDc1MCBMIDEwNDcsNzUxIEwgMTA1MCw3NTQgTCAxMDUwLDc1NSBMIDEwNTQsNzU5IEwgMTA1NSw3NTkgTCAxMDY3LDc3MSBMIDEwNjgsNzcxIEwgMTA3MCw3NzMgTCAxMDcwLDc3NCBMIDEwNzEsNzc1IEwgMTA3MSw3NzYgTCAxMDczLDc3OCBMIDEwNzMsNzgwIEwgMTA3Nyw3ODQgTCAxMDc3LDc4NSBMIDEwNzgsNzg2IEwgMTA3OCw3ODcgTCAxMDgzLDc5MiBMIDEwODMsNzkzIEwgMTA4Nyw3OTcgTCAxMDg3LDc5OCBMIDEwOTEsODAyIEwgMTA5MSw4MDMgTCAxMDk0LDgwNiBMIDEwOTQsODA3IEwgMTA5Nyw4MTAgTCAxMDk3LDgxMSBMIDEwOTgsODEyIEwgMTA5OCw4MTMgTCAxMTAxLDgxNiBMIDExMDEsODE3IEwgMTEwMiw4MTggTCAxMTAyLDgxOSBMIDExMDMsODIwIEwgMTEwMyw4MjEgTCAxMTA0LDgyMiBMIDExMDQsODIzIEwgMTEwMSw4MjYgTCAxMDk5LDgyNiBMIDEwOTgsODI3IEwgMTA5Nyw4MjcgTCAxMDk2LDgyOCBMIDEwOTUsODI4IEwgMTA5Myw4MzAgTCAxMDkyLDgzMCBMIDEwOTAsODMyIEwgMTA4OSw4MzIgTCAxMDg4LDgzMyBMIDEwODcsODMzIEwgMTA4Nyw4MzQgTCAxMDg1LDgzNiBMIDEwODQsODM2IEwgMTA4MSw4MzkgTCAxMDgwLDgzOSBMIDEwNzgsODQxIEwgMTA3OCw4NDIgTCAxMDc2LDg0NCBMIDEwNzMsODQ0IEwgMTA3Miw4NDMgTCAxMDcxLDg0MyBMIDEwNjksODQxIEwgMTA2OSw4MzkgTCAxMDY4LDgzOCBMIDEwNjgsODM3IEwgMTA2Myw4MzIgTCAxMDYyLDgzMiBMIDEwNTksODI5IEwgMTA1OSw4MjggTCAxMDUzLDgyMiBMIDEwNTMsODI0IEwgMTA1Miw4MjUgTCAxMDUyLDgyNyBMIDEwNTMsODI4IEwgMTA1Myw4MzAgTCAxMDU0LDgzMSBMIDEwNTQsODMyIEwgMTA1Niw4MzQgTCAxMDU2LDgzNSBMIDEwNTksODM4IEwgMTA1OSw4MzkgTCAxMDYwLDg0MCBMIDEwNjEsODQwIEwgMTA2Myw4NDIgTCAxMDY0LDg0MiBMIDEwNjUsODQzIEwgMTA2NSw4NDQgTCAxMDY2LDg0NCBMIDEwNjcsODQ1IEwgMTA2OCw4NDUgTCAxMDczLDg1MCBMIDEwNzMsODUzIEwgMTA3Miw4NTQgTCAxMDcyLDg1NSBMIDEwNzEsODU2IEwgMTA3MSw4NTkgTCAxMDcwLDg2MCBMIDEwNzAsODczIEwgMTA3MSw4NzQgTCAxMDcxLDg5MCBMIDEwNjgsODkzIEwgMTA2Nyw4OTMgTCAxMDY2LDg5NCBMIDEwNjUsODk0IEwgMTA2Myw4OTYgTCAxMDYyLDg5NiBMIDEwNTksODk5IEwgMTA1OCw4OTkgTCAxMDU1LDkwMiBMIDEwNTUsOTAzIEwgMTA1Myw5MDUgTCAxMDUzLDkwNiBMIDEwNTIsOTA3IEwgMTA1Miw5MTYgTCAxMDUzLDkxNyBMIDEwNTMsOTE5IEwgMTA1NCw5MjAgTCAxMDU0LDkyMiBMIDEwNTUsOTIzIEwgMTA1NSw5MjQgTCAxMDU2LDkyNSBMIDEwNTYsOTI3IEwgMTA2MSw5MzIgTCAxMDYxLDkzMyBMIDEwNjIsOTMzIEwgMTA2Myw5MzQgTCAxMDYzLDkzNSBMIDEwNjQsOTM2IEwgMTA2NSw5MzYgTCAxMDcxLDk0MiBMIDEwNzIsOTQyIEwgMTA3NSw5NDUgTCAxMDc2LDk0NSBMIDEwNzksOTQ4IEwgMTA4MCw5NDggTCAxMDgzLDk1MSBMIDEwODQsOTUxIEwgMTA4NSw5NTIgTCAxMDg2LDk1MiBMIDEwODksOTU1IEwgMTA5MCw5NTUgTCAxMDkxLDk1NiBMIDEwOTIsOTU2IEwgMTA5Myw5NTcgTCAxMDk0LDk1NyBMIDEwOTYsOTU5IEwgMTA5Nyw5NTkgTCAxMDk4LDk2MCBMIDEwOTksOTYwIEwgMTEwMCw5NjEgTCAxMTAxLDk2MSBMIDExMDMsOTYzIEwgMTEwNCw5NjMgTCAxMTA1LDk2NCBMIDExMDYsOTY0IEwgMTEwNyw5NjUgTCAxMTA4LDk2NSBMIDExMDksOTY2IEwgMTExMCw5NjYgTCAxMTExLDk2NyBMIDExMTIsOTY3IEwgMTExMyw5NjggTCAxMTE0LDk2OCBMIDExMTUsOTY5IEwgMTExNyw5NjkgTCAxMTE4LDk3MCBMIDExMTksOTcwIEwgMTEyMSw5NzIgTCAxMTIzLDk3MiBMIDExMjQsOTczIEwgMTEyNiw5NzMgTCAxMTI3LDk3NCBMIDExMjgsOTc0IEwgMTEyOSw5NzUgTCAxMTMwLDk3NSBMIDExMzEsOTc2IEwgMTEzMiw5NzYgTCAxMTMzLDk3NyBMIDExMzUsOTc3IEwgMTEzNiw5NzggTCAxMTM4LDk3OCBMIDExMzksOTc5IEwgMTE0MSw5NzkgTCAxMTQyLDk4MCBMIDExNDMsOTgwIEwgMTE0NCw5ODEgTCAxMTQ1LDk4MSBMIDExNDYsOTgyIEwgMTE0OCw5ODIgTCAxMTQ5LDk4MyBMIDExNTEsOTgzIEwgMTE1Miw5ODQgTCAxMTU0LDk4NCBMIDExNTUsOTg1IEwgMTE1Niw5ODUgTCAxMTU3LDk4NiBMIDExNjEsOTg2IEwgMTE2MSw5ODUgTCAxMTYyLDk4NCBMIDExNjIsOTgzIEwgMTE2Myw5ODIgTCAxMTY0LDk4MiBMIDExNjQsOTgxIEwgMTE2NSw5ODAgTCAxMTY1LDk3OSBMIDExNjgsOTc2IEwgMTE2OCw5NzUgTCAxMTY5LDk3NCBMIDExNjksOTczIEwgMTE3MCw5NzIgTCAxMTcxLDk3MyBMIDExNzEsOTgyIEwgMTE3MCw5ODMgTCAxMTcwLDk4OCBMIDExNjksOTg5IEwgMTE2OSw5OTUgTCAxMTY4LDk5NiBMIDExNjksOTk3IEwgMTE2OSw5OTkgTCAxMTY4LDEwMDAgTCAxMTY4LDEwMTkgTCAxMTY5LDEwMjAgTCAxMTY5LDEwMjMgTCAxMTcwLDEwMjQgTCAxMTcwLDEwMjUgTCAxMTcxLDEwMjYgTCAxMTcxLDEwMjggTCAxMTcyLDEwMjkgTCAxMTc0LDEwMjkgTCAxMTc1LDEwMjggTCAxMTc1LDEwMjYgTCAxMTc3LDEwMjQgTCAxMTc3LDEwMjIgTCAxMTc4LDEwMjEgTCAxMTc4LDEwMjAgTCAxMTc5LDEwMTkgTCAxMTc5LDEwMTcgTCAxMTgwLDEwMTYgTCAxMTgwLDEwMTUgTCAxMTgxLDEwMTQgTCAxMTgxLDEwMTMgTCAxMTgyLDEwMTIgTCAxMTgyLDEwMTEgTCAxMTgzLDEwMTAgTCAxMTgzLDEwMDggTCAxMTg0LDEwMDcgTCAxMTg0LDEwMDYgTCAxMTg1LDEwMDUgTCAxMTg1LDEwMDMgTCAxMTg2LDEwMDIgTCAxMTg2LDEwMDAgTCAxMTg3LDk5OSBMIDExODcsOTk4IEwgMTE4OCw5OTcgTCAxMTg4LDk5NiBMIDExODksOTk1IEwgMTE4OSw5OTQgTCAxMTkxLDk5MiBMIDExOTEsOTkxIEwgMTE5Miw5OTAgTCAxMTkyLDk4OSBMIDExOTMsOTg4IEwgMTE5Myw5ODcgTCAxMTk1LDk4NSBMIDExOTUsOTg0IEwgMTE5Nyw5ODIgTCAxMTk3LDk4MSBMIDExOTgsOTgwIEwgMTE5OCw5NzkgTCAxMjAwLDk3NyBMIDEyMDEsOTc3IEwgMTIwMSw5NzYgTCAxMjA0LDk3MyBMIDEyMDYsOTczIEwgMTIwNyw5NzIgTCAxMjA5LDk3MiBMIDEyMTEsOTc0IEwgMTIxMCw5NzUgTCAxMjEwLDk3NyBMIDEyMDksOTc4IEwgMTIwOSw5ODAgTCAxMjA3LDk4MiBMIDEyMDcsOTg0IEwgMTIwNiw5ODUgTCAxMjA2LDk4NiBMIDEyMDUsOTg3IEwgMTIwNSw5ODggTCAxMjA0LDk4OSBMIDEyMDQsOTkxIEwgMTIwMiw5OTMgTCAxMjAyLDk5NSBMIDEyMDEsOTk2IEwgMTIwMSw5OTggTCAxMjAwLDk5OSBMIDEyMDAsMTAwMSBMIDEyMDEsMTAwMSBMIDEyMDIsMTAwMiBMIDEyMDUsMTAwMiBMIDEyMDcsMTAwNCBMIDEyMDksMTAwNCBMIDEyMTAsMTAwNSBMIDEyMTIsMTAwNSBMIDEyMTMsMTAwNiBMIDEyMTUsMTAwNiBMIDEyMTYsMTAwNyBMIDEyMTcsMTAwNyBMIDEyMTgsMTAwOCBMIDEyMTksMTAwOCBMIDEyMjAsMTAwOSBMIDEyMjIsMTAwOSBMIDEyMjMsMTAxMCBMIDEyMjUsMTAxMCBMIDEyMjYsMTAxMSBMIDEyMjcsMTAxMSBMIDEyMjgsMTAxMiBMIDEyMjksMTAxMiBMIDEyMzAsMTAxMyBMIDEyMzIsMTAxMyBMIDEyMzMsMTAxNCBMIDEyMzQsMTAxNCBMIDEyMzUsMTAxNSBMIDEyMzcsMTAxNSBMIDEyMzgsMTAxNiBMIDEyMzksMTAxNiBMIDEyNDAsMTAxNyBMIDEyNDEsMTAxNyBMIDEyNDIsMTAxOCBMIDEyNDMsMTAxOCBMIDEyNDQsMTAxOSBMIDEyNDYsMTAxOSBMIDEyNDcsMTAyMCBMIDEyNDksMTAyMCBMIDEyNTAsMTAyMSBMIDEyNTEsMTAyMSBMIDEyNTIsMTAyMiBMIDEyNTQsMTAyMiBMIDEyNTUsMTAyMyBMIDEyNTYsMTAyMyBMIDEyNTcsMTAyNCBMIDEyNTksMTAyNCBMIDEyNjAsMTAyNSBMIDEyNjEsMTAyNSBMIDEyNjIsMTAyNiBMIDEyNjMsMTAyNiBMIDEyNjQsMTAyNyBMIDEyNjUsMTAyNyBMIDEyNjYsMTAyOCBMIDEyNjgsMTAyOCBMIDEyNjksMTAyOSBMIDEyNzAsMTAyOSBMIDEyNzEsMTAzMCBMIDEyNzIsMTAzMCBMIDEyNzMsMTAzMSBMIDEyNzQsMTAzMSBMIDEyNzUsMTAzMiBMIDEyNzgsMTAzMiBMIDEyNzksMTAzMyBMIDEyODEsMTAzMyBMIDEyODIsMTAzNCBMIDEyODMsMTAzNCBMIDEyODQsMTAzNSBMIDEyODYsMTAzNSBMIDEyODcsMTAzNiBMIDEyODgsMTAzNiBMIDEyODksMTAzNyBMIDEyOTEsMTAzNyBMIDEyOTIsMTAzOCBMIDEyOTMsMTAzOCBMIDEyOTQsMTAzOSBMIDEyOTYsMTAzOSBMIDEyOTcsMTA0MCBMIDEyOTgsMTA0MCBMIDEyOTksMTA0MSBMIDEzMDAsMTA0MSBMIDEzMDEsMTA0MiBMIDEzMDQsMTA0MiBMIDEzMDUsMTA0MyBMIDEzMDYsMTA0MyBMIDEzMDgsMTA0NSBMIDEzMTAsMTA0NSBMIDEzMTEsMTA0NiBMIDEzMTIsMTA0NiBMIDEzMTMsMTA0NyBMIDEzMTUsMTA0NyBMIDEzMTYsMTA0OCBMIDEzMTcsMTA0OCBMIDEzMTgsMTA0OSBMIDEzMTksMTA0OSBMIDEzMjAsMTA1MCBMIDEzMjIsMTA1MCBMIDEzMjMsMTA1MSBMIDEzMjUsMTA1MSBMIDEzMjYsMTA1MiBMIDEzMjgsMTA1MiBMIDEzMzAsMTA1NCBMIDEzMzEsMTA1NCBMIDEzMzIsMTA1NSBMIDEzMzMsMTA1NSBMIDEzMzQsMTA1NiBMIDEzMzYsMTA1NiBMIDEzMzcsMTA1NyBMIDEzMzksMTA1NyBMIDEzNDEsMTA1OSBMIDEzNDMsMTA1OSBMIDEzNDQsMTA2MCBMIDEzNDUsMTA2MCBMIDEzNDYsMTA2MSBMIDEzNDcsMTA2MSBMIDEzNDksMTA2MyBMIDEzNTAsMTA2MyBMIDEzNTEsMTA2NCBMIDEzNTMsMTA2NCBMIDEzNTQsMTA2NSBMIDEzNTUsMTA2NSBMIDEzNTYsMTA2NiBMIDEzNTcsMTA2NiBMIDEzNTgsMTA2NyBMIDEzNTksMTA2NyBMIDEzNjAsMTA2OCBMIDEzNjEsMTA2OCBMIDEzNjMsMTA3MCBMIDEzNjUsMTA3MCBMIDEzNjYsMTA3MSBMIDEzNjcsMTA3MSBMIDEzNjksMTA3MyBMIDEzNzAsMTA3MyBMIDEzNzEsMTA3NCBMIDEzNzMsMTA3NCBMIDEzNzQsMTA3NSBMIDEzNzUsMTA3NSBMIDEzNzcsMTA3NyBMIDEzNzgsMTA3NyBMIDEzNzksMTA3OCBMIDEzODAsMTA3OCBMIDEzODEsMTA3OSBMIDEzODMsMTA3OSBMIDEzODQsMTA4MCBMIDEzODUsMTA4MCBMIDEzODcsMTA4MiBMIDEzODgsMTA4MiBMIDEzODksMTA4MyBMIDEzOTEsMTA4MyBMIDEzOTIsMTA4NCBMIDEzOTMsMTA4NCBMIDEzOTUsMTA4NiBMIDEzOTYsMTA4NiBMIDEzOTcsMTA4NyBMIDEzOTksMTA4NyBMIDE0MDAsMTA4OCBMIDE0MDEsMTA4OCBMIDE0MDIsMTA4OSBMIDE0MDMsMTA4OSBMIDE0MDQsMTA5MCBMIDE0MDUsMTA5MCBMIDE0MDcsMTA5MiBMIDE0MDksMTA5MiBMIDE0MTAsMTA5MyBMIDE0MTEsMTA5MyBMIDE0MTMsMTA5NSBMIDE0MTUsMTA5NSBMIDE0MTcsMTA5NyBMIDE0MTksMTA5NyBMIDE0MjAsMTA5OCBMIDE0MjEsMTA5OCBMIDE0MjMsMTEwMCBMIDE0MjUsMTEwMCBMIDE0MjYsMTEwMSBMIDE0MjcsMTEwMSBMIDE0MjgsMTEwMiBMIDE0MjksMTEwMiBMIDE0MzAsMTEwMyBMIDE0MzEsMTEwMyBMIDE0MzIsMTEwNCBMIDE0MzMsMTEwNCBMIDE0MzQsMTEwNSBMIDE0MzUsMTEwNSBMIDE0MzcsMTEwNyBMIDE0MzksMTEwNyBMIDE0NDEsMTEwOSBMIDE0NDIsMTEwOSBMIDE0NDMsMTExMCBMIDE0NDQsMTExMCBMIDE0NDYsMTExMiBMIDE0NDcsMTExMiBMIDE0NDgsMTExMyBMIDE0NDksMTExMyBMIDE0NTAsMTExNCBMIDE0NTEsMTExNCBMIDE0NTIsMTExNSBMIDE0NTMsMTExNSBMIDE0NTQsMTExNiBMIDE0NTUsMTExNiBMIDE0NTcsMTExOCBMIDE0NTgsMTExOCBMIDE0NTksMTExOSBMIDE0NjAsMTExOSBMIDE0NjEsMTEyMCBMIDE0NjIsMTEyMCBMIDE0NjUsMTEyMyBMIDE0NjYsMTEyMyBMIDE0NjcsMTEyNCBMIDE0NjgsMTEyNCBMIDE0NzEsMTEyNyBMIDE0NzIsMTEyNyBMIDE0NzMsMTEyOCBMIDE0NzQsMTEyOCBMIDE0NzYsMTEzMCBMIDE0NzcsMTEzMCBMIDE0ODAsMTEzMyBMIDE0ODEsMTEzMyBMIDE0ODIsMTEzNCBMIDE0ODMsMTEzNCBMIDE0ODYsMTEzNyBMIDE0ODcsMTEzNyBMIDE0ODksMTEzOSBMIDE0OTAsMTEzOSBMIDE0OTMsMTE0MiBMIDE0OTQsMTE0MiBMIDE0OTYsMTE0NCBMIDE0OTcsMTE0NCBMIDE0OTgsMTE0NSBMIDE0OTgsMTE0NiBMIDE0OTksMTE0NiBMIDE1MDAsMTE0NyBMIDE1MDEsMTE0NyBMIDE1MDQsMTE1MCBMIDE1MDUsMTE1MCBMIDE1MDcsMTE1MiBMIDE1MDgsMTE1MiBMIDE1MTEsMTE1NSBMIDE1MTIsMTE1NSBMIDE1MTUsMTE1OCBMIDE1MTYsMTE1OCBMIDE1MjMsMTE2NSBMIDE1MjQsMTE2NSBMIDE1MjcsMTE2OCBMIDE1MjcsMTE2OSBMIDE1MjksMTE3MSBMIDE1MzAsMTE3MSBMIDE1MzEsMTE3MiBMIDE1MzEsMTE3MyBMIDE1MzIsMTE3NCBMIDE1MzMsMTE3NCBMIDE1MzUsMTE3NiBMIDE1MzUsMTE3NyBMIDE1MzYsMTE3NyBMIDE1MzcsMTE3OCBMIDE1MzcsMTE3OSBMIDE1NDAsMTE4MiBMIDE1NDAsMTE4MyBMIDE1NDQsMTE4NyBMIDE1NDQsMTE4OCBMIDE1NDksMTE5MyBMIDE1NDksMTE5NCBMIDE1NTYsMTIwMSBMIDE1NTYsMTIwMiBMIDE1NTcsMTIwMyBMIDE1NTcsMTIwNCBMIDE1NTgsMTIwNSBMIDE1NTgsMTIwNiBMIDE1NjEsMTIwOSBMIDE1NjEsMTIxMCBMIDE1NjIsMTIxMCBMIDE1NjMsMTIxMSBMIDE1NjIsMTIxMiBMIDE1NjUsMTIxNSBMIDE1NjUsMTIxNyBMIDE1NjYsMTIxNyBMIDE1NjcsMTIxOCBMIDE1NjYsMTIxOSBMIDE1NjcsMTIxOSBMIDE1NjgsMTIyMCBMIDE1NjgsMTIyMyBMIDE1NjksMTIyMyBMIDE1NzAsMTIyNCBMIDE1NzAsMTIyNiBMIDE1NzEsMTIyNyBMIDE1NzEsMTIyOSBMIDE1NzIsMTIzMCBMIDE1NzIsMTIzMSBMIDE1NzEsMTIzMiBMIDE1NzIsMTIzMiBMIDE1NzMsMTIzMyBMIDE1NzMsMTIzNSBMIDE1NzQsMTIzNiBMIDE1NzMsMTIzNyBMIDE1NzQsMTIzOCBMIDE1NzQsMTIzOSBMIDE1NzUsMTI0MCBMIDE1NzQsMTI0MSBMIDE1NzUsMTI0MiBMIDE1NzUsMTI0NCBMIDE1NzYsMTI0NSBMIDE1NzUsMTI0NiBMIDE1NzUsMTI1NyBMIDE1NzQsMTI1OCBMIDE1NzQsMTI2MCBMIDE1NzMsMTI2MSBMIDE1NzMsMTI2MyBMIDE1NzIsMTI2NCBMIDE1NzIsMTI2NSBMIDE1NzEsMTI2NiBMIDE1NzEsMTI2NyBMIDE1NzAsMTI2OCBMIDE1NzEsMTI2OSBMIDE1NzAsMTI3MCBMIDE1NjksMTI3MCBMIDE1NjgsMTI3MSBMIDE1NjgsMTI3MiBMIDE1NjIsMTI3OCBMIDE1NjEsMTI3OCBMIDE1NjEsMTI3OSBMIDE1NjAsMTI4MCBMIDE1NTgsMTI4MCBMIDE1NTcsMTI4MSBMIDE1NTcsMTI4MiBMIDE1NTYsMTI4MyBMIDE1NTUsMTI4MiBMIDE1NTQsMTI4MiBMIDE1NTQsMTI4MyBMIDE1NTMsMTI4NCBMIDE1NTEsMTI4NCBMIDE1NTAsMTI4NSBMIDE1NDksMTI4NSBMIDE1NDcsMTI4NyBMIDE1NDYsMTI4NyBMIDE1NDUsMTI4OCBMIDE1NDIsMTI4OCBMIDE1NDEsMTI4OSBMIDE1NDAsMTI4OSBMIDE1MzksMTI4OCBMIDE1MzcsMTI5MCBMIDE1MzMsMTI5MCBMIDE1MzIsMTI5MSBMIDE1MzEsMTI5MCBMIDE1MzAsMTI5MSBMIDE1MjksMTI5MSBMIDE1MjgsMTI5MiBMIDE1MjcsMTI5MSBMIDE1MTQsMTI5MSBMIDE1MTMsMTI5MCBMIDE1MTIsMTI5MSBMIDE1MTEsMTI5MCBMIDE1MDksMTI5MCBMIDE1MDcsMTI4OCBMIDE1MDgsMTI4NyBMIDE1MTEsMTI4NyBMIDE1MTIsMTI4NiBMIDE1MTQsMTI4NiBMIDE1MTUsMTI4NSBMIDE1MTcsMTI4NSBMIDE1MTgsMTI4NCBMIDE1MjEsMTI4NCBMIDE1MjIsMTI4MyBMIDE1MjQsMTI4MyBMIDE1MjYsMTI4MSBMIDE1MjcsMTI4MiBMIDE1MjksMTI4MCBMIDE1MzAsMTI4MCBMIDE1MzEsMTI3OSBMIDE1MzMsMTI3OSBMIDE1MzQsMTI3OCBMIDE1MzUsMTI3OCBMIDE1MzcsMTI3NiBMIDE1MzksMTI3NiBMIDE1NDEsMTI3NCBMIDE1NDIsMTI3NCBMIDE1NDMsMTI3MyBMIDE1NDQsMTI3MyBMIDE1NDYsMTI3MSBMIDE1NDcsMTI3MSBMIDE1NDgsMTI3MCBMIDE1NDksMTI3MCBMIDE1NTAsMTI2OSBMIDE1NTAsMTI2OCBMIDE1NTEsMTI2NyBMIDE1NTIsMTI2NyBMIDE1NTIsMTI2NiBMIDE1NTUsMTI2MyBMIDE1NTUsMTI2MSBMIDE1NTcsMTI1OSBMIDE1NTcsMTI1OCBMIDE1NTgsMTI1NyBMIDE1NTgsMTI1NSBMIDE1NTcsMTI1NCBMIDE1NTcsMTI1MyBMIDE1NTgsMTI1MiBMIDE1NTgsMTI0NyBMIDE1NTcsMTI0NiBMIDE1NTcsMTIzOSBMIDE1NTYsMTIzOCBMIDE1NTYsMTIzNyBMIDE1NTUsMTIzNiBMIDE1NTUsMTIzMyBMIDE1NTQsMTIzMiBMIDE1NTQsMTIzMSBMIDE1NTMsMTIzMCBMIDE1NTMsMTIyOCBMIDE1NTIsMTIyNyBMIDE1NTIsMTIyNiBMIDE1NTAsMTIyNCBMIDE1NTAsMTIyMyBMIDE1NDksMTIyMiBMIDE1NDksMTIyMCBMIDE1NDgsMTIxOSBMIDE1NDgsMTIxOCBMIDE1NDUsMTIxNSBMIDE1NDUsMTIxNCBMIDE1NDQsMTIxMyBMIDE1NDQsMTIxMiBMIDE1NDEsMTIwOSBMIDE1NDEsMTIwOCBMIDE1MzksMTIwNiBMIDE1MzksMTIwNSBMIDE1MzUsMTIwMSBMIDE1MzUsMTIwMCBMIDE1MzQsMTE5OSBMIDE1MzQsMTE5OCBMIDE1MzMsMTE5OCBMIDE1MzEsMTE5NiBMIDE1MzEsMTE5NSBMIDE1MjcsMTE5MSBMIDE1MjcsMTE5MCBMIDE1MTksMTE4MiBMIDE1MTgsMTE4MiBMIDE1MTYsMTE4MCBMIDE1MTUsMTE4MCBMIDE1MTIsMTE3NyBMIDE1MTEsMTE3NyBMIDE1MDksMTE3NSBMIDE1MDcsMTE3NSBMIDE1MDYsMTE3NCBMIDE1MDcsMTE3MyBMIDE1MDYsMTE3NCBMIDE1MDUsMTE3MyBMIDE1MDUsMTE3MiBMIDE1MDEsMTE3MiBMIDE1MDAsMTE3MSBMIDE0OTgsMTE3MSBMIDE0OTcsMTE3MCBMIDE0OTUsMTE3MCBMIDE0OTQsMTE2OSBMIDE0OTEsMTE2OSBMIDE0OTAsMTE2OCBMIDE0ODksMTE2OSBMIDE0ODcsMTE2OSBMIDE0ODYsMTE2OCBMIDE0ODcsMTE2NyBMIDE0ODYsMTE2OCBMIDE0ODUsMTE2NyBMIDE0ODQsMTE2OCBMIDE0ODMsMTE2OCBMIDE0ODIsMTE2OSBMIDE0ODEsMTE2OCBMIDE0NzQsMTE2OCBMIDE0NzMsMTE2OSBMIDE0NzIsMTE2OCBMIDE0NzEsMTE2OCBMIDE0NzAsMTE2NyBMIDE0NjksMTE2OCBMIDE0NjQsMTE2OCBMIDE0NjMsMTE2NyBMIDE0NjEsMTE2NyBMIDE0NjAsMTE2NiBMIDE0NTksMTE2NiBMIDE0NTgsMTE2NyBMIDE0NTYsMTE2NyBMIDE0NTUsMTE2NiBMIDE0NTIsMTE2NiBMIDE0NTEsMTE2NSBMIDE0NDksMTE2NSBMIDE0NDcsMTE2MyBMIDE0NDYsMTE2NCBMIDE0NDQsMTE2MiBMIDE0NDIsMTE2MiBMIDE0NDEsMTE2MSBMIDE0NDAsMTE2MSBMIDE0MzksMTE2MCBMIDE0MzcsMTE2MCBMIDE0MzMsMTE1NiBMIDE0MzIsMTE1NyBMIDE0MjksMTE1NCBMIDE0MjgsMTE1NSBMIDE0MjcsMTE1NCBMIDE0MjcsMTE1MyBMIDE0MjYsMTE1MiBMIDE0MjUsMTE1MiBMIDE0MjQsMTE1MSBMIDE0MjMsMTE1MSBMIDE0MjAsMTE0OCBMIDE0MTksMTE0OCBMIDE0MTgsMTE0NyBMIDE0MTcsMTE0NyBMIDE0MTYsMTE0NiBMIDE0MTUsMTE0NiBMIDE0MTMsMTE0NCBMIDE0MTMsMTE0MyBMIDE0MTEsMTE0MyBMIDE0MTAsMTE0MiBMIDE0MDksMTE0MiBMIDE0MDcsMTE0MCBMIDE0MDUsMTE0MCBMIDE0MDQsMTEzOSBMIDE0MDIsMTEzOSBMIDE0MDEsMTEzOCBMIDEzOTksMTEzOCBMIDEzOTgsMTEzNyBMIDEzOTYsMTEzNyBMIDEzOTMsMTEzNCBMIDEzOTIsMTEzNCBMIDEzOTEsMTEzNSBMIDEzOTAsMTEzNCBMIDEzODksMTEzNCBMIDEzODgsMTEzMyBMIDEzODYsMTEzMyBMIDEzODQsMTEzMSBMIDEzODIsMTEzMSBMIDEzODEsMTEzMiBMIDEzODAsMTEzMSBMIDEzNzksMTEzMSBMIDEzNzgsMTEzMCBMIDEzNzcsMTEzMSBMIDEzNzYsMTEzMCBMIDEzNzUsMTEzMCBMIDEzNzQsMTEyOSBMIDEzNzMsMTEzMCBMIDEzNzIsMTEzMCBMIDEzNzEsMTEyOSBMIDEzNzAsMTEzMCBMIDEzNjksMTEzMCBMIDEzNjgsMTEyOSBMIDEzNjYsMTEyOSBMIDEzNjUsMTEzMCBMIDEzNjQsMTEzMCBMIDEzNjMsMTEyOSBMIDEzNTksMTEyOSBMIDEzNTgsMTEzMCBMIDEzNTcsMTEyOSBMIDEzNTYsMTEyOSBMIDEzNTUsMTEzMCBMIDEzNDgsMTEzMCBMIDEzNDcsMTEzMSBMIDEzNDYsMTEzMCBMIDEzNDUsMTEzMSBMIDEzNDQsMTEzMSBMIDEzNDMsMTEzMiBMIDEzNDIsMTEzMSBMIDEzNDEsMTEzMiBMIDEzNDAsMTEzMiBMIDEzNDAsMTEzMyBMIDEzMzksMTEzNCBMIDEzMzgsMTEzNCBMIDEzMzYsMTEzNiBMIDEzMzQsMTEzNiBMIDEzMzAsMTE0MCBMIDEzMjksMTE0MCBMIDEzMjksMTE0MSBMIDEzMjcsMTE0MyBMIDEzMjgsMTE0NCBMIDEzMjcsMTE0NSBMIDEzMjUsMTE0NSBMIDEzMjUsMTE0NyBMIDEzMjQsMTE0OCBMIDEzMjQsMTE0OSBMIDEzMjMsMTE1MCBMIDEzMjIsMTE1MCBMIDEzMjIsMTE1MSBMIDEzMjEsMTE1MiBMIDEzMjEsMTE1MyBMIDEzMjAsMTE1NCBMIDEzMjAsMTE1NyBMIDEzMTcsMTE2MCBMIDEzMTgsMTE2MSBMIDEzMTcsMTE2MiBMIDEzMTYsMTE2MiBMIDEzMTYsMTE2MyBMIDEzMTcsMTE2NCBMIDEzMTUsMTE2NiBMIDEzMTYsMTE2NyBMIDEzMTYsMTE2OCBMIDEzMTUsMTE2OSBMIDEzMTQsMTE2OSBMIDEzMTQsMTE3MCBMIDEzMTUsMTE3MSBMIDEzMTUsMTE3MyBMIDEzMTQsMTE3NCBMIDEzMTQsMTE3NiBMIDEzMTUsMTE3NyBMIDEzMTQsMTE3OCBMIDEzMTQsMTE3OSBMIDEzMTMsMTE4MCBMIDEzMTQsMTE4MSBMIDEzMTQsMTE4NCBMIDEzMTMsMTE4NSBMIDEzMTQsMTE4NiBMIDEzMTQsMTE5MyBMIDEzMTUsMTE5NCBMIDEzMTQsMTE5NSBMIDEzMTUsMTE5NiBMIDEzMTUsMTE5NyBMIDEzMTQsMTE5OCBMIDEzMTUsMTE5OSBMIDEzMTUsMTIwNCBMIDEzMTYsMTIwNSBMIDEzMTUsMTIwNiBMIDEzMTcsMTIwOCBMIDEzMTcsMTIxMiBMIDEzMTgsMTIxMyBMIDEzMTgsMTIxNCBMIDEzMTksMTIxNCBMIDEzMjAsMTIxNSBMIDEzMjAsMTIxNiBMIDEzMjEsMTIxNyBMIDEzMjAsMTIxOCBMIDEzMjIsMTIyMCBMIDEzMjIsMTIyMSBMIDEzMjUsMTIyNCBMIDEzMjUsMTIyNSBMIDEzMjksMTIyOSBMIDEzMjksMTIzMCBMIDEzMzAsMTIzMCBMIDEzMzEsMTIzMSBMIDEzMzEsMTIzMiBMIDEzMzIsMTIzMiBMIDEzMzgsMTIzOCBMIDEzMzksMTIzOCBMIDEzNDAsMTIzOSBMIDEzNDEsMTIzOSBMIDEzNDMsMTI0MSBMIDEzNDQsMTI0MSBMIDEzNDUsMTI0MiBMIDEzNDcsMTI0MiBMIDEzNDgsMTI0MyBMIDEzNDksMTI0MyBMIDEzNTAsMTI0NCBMIDEzNTIsMTI0NCBMIDEzNTMsMTI0NSBMIDEzNTQsMTI0NSBMIDEzNTUsMTI0NiBMIDEzNTcsMTI0NiBMIDEzNTgsMTI0NyBMIDEzNTksMTI0NyBMIDEzNjAsMTI0OCBMIDEzNjEsMTI0OCBMIDEzNjMsMTI1MCBMIDEzNjMsMTI1MiBMIDEzNjEsMTI1NCBMIDEzNjEsMTI1NSBMIDEzNjAsMTI1NiBMIDEzNTMsMTI1NiBMIDEzNTIsMTI1NSBMIDEzNTEsMTI1NSBMIDEzNTAsMTI1NiBMIDEzNDksMTI1NiBMIDEzNDgsMTI1NSBMIDEzNDYsMTI1NSBMIDEzNDUsMTI1NCBMIDEzNDQsMTI1NCBMIDEzNDMsMTI1MyBMIDEzNDEsMTI1MyBMIDEzNDAsMTI1MiBMIDEzMzksMTI1MiBMIDEzMzgsMTI1MyBMIDEzMzcsMTI1MiBMIDEzMjMsMTI1MiBMIDEzMjIsMTI1MyBMIDEzMTgsMTI1MyBMIDEzMTgsMTI1NCBMIDEzMTcsMTI1NSBMIDEzMTYsMTI1NCBMIDEzMTUsMTI1NCBMIDEzMTQsMTI1NSBMIDEzMTAsMTI1NSBMIDEzMDgsMTI1NyBMIDEzMDcsMTI1NiBMIDEzMDYsMTI1NiBMIDEzMDUsMTI1NyBMIDEzMDMsMTI1NyBMIDEzMDIsMTI1OCBMIDEzMDEsMTI1OCBMIDEzMDAsMTI1OSBMIDEyOTksMTI1OCBMIDEyOTksMTI1OSBMIDEyOTgsMTI2MCBMIDEyOTcsMTI2MCBMIDEyOTYsMTI1OSBMIDEyOTUsMTI2MCBMIDEyOTQsMTI2MCBMIDEyOTMsMTI2MSBMIDEyOTIsMTI2MCBMIDEyOTEsMTI2MSBMIDEyODgsMTI2MSBMIDEyODcsMTI2MiBMIDEyODUsMTI2MiBMIDEyODQsMTI2MyBMIDEyODEsMTI2MyBMIDEyODAsMTI2NCBMIDEyNzksMTI2NCBMIDEyNzgsMTI2NSBMIDEyNzUsMTI2NSBMIDEyNzQsMTI2NiBMIDEyNzIsMTI2NiBMIDEyNzEsMTI2NyBMIDEyNzAsMTI2NyBMIDEyNzAsMTI2OCBMIDEyNjksMTI2OSBMIDEyNjgsMTI2OCBMIDEyNjgsMTI2NyBMIDEyNjcsMTI2OCBMIDEyNjYsMTI2OCBMIDEyNjQsMTI3MCBMIDEyNjMsMTI2OSBMIDEyNjIsMTI2OSBMIDEyNjEsMTI3MCBMIDEyNTksMTI3MCBMIDEyNTgsMTI3MSBMIDEyNTcsMTI3MSBMIDEyNTYsMTI3MiBMIDEyNTQsMTI3MiBMIDEyNTMsMTI3MyBMIDEyNTEsMTI3MyBMIDEyNTAsMTI3NCBMIDEyNDYsMTI3NCBMIDEyNDUsMTI3NSBMIDEyNDMsMTI3NSBMIDEyNDIsMTI3NiBMIDEyNDEsMTI3NiBMIDEyNDAsMTI3NyBMIDEyMzksMTI3NiBMIDEyMzcsMTI3OCBMIDEyMzYsMTI3OCBMIDEyMzUsMTI3NyBMIDEyMzMsMTI3OSBMIDEyMjgsMTI3OSBMIDEyMjksMTI4MCBMIDEyMjgsMTI4MSBMIDEyMjQsMTI4MSBMIDEyMjMsMTI4MiBMIDEyMjIsMTI4MiBMIDEyMjEsMTI4MSBMIDEyMjEsMTI4MiBMIDEyMjAsMTI4MyBMIDEyMTksMTI4MyBMIDEyMTgsMTI4NCBMIDEyMTIsMTI4NCBMIDEyMTEsMTI4NSBMIDEyMTAsMTI4NSBMIDEyMDksMTI4NiBMIDEyMDgsMTI4NSBMIDEyMDcsMTI4NiBMIDEyMDYsMTI4NiBMIDEyMDQsMTI4OCBMIDEyMDMsMTI4NyBMIDEyMDIsMTI4NyBMIDEyMDEsMTI4OCBMIDEyMDAsMTI4NyBMIDExOTgsMTI4OSBMIDExOTcsMTI4OCBMIDExOTYsMTI4OCBMIDExOTUsMTI4OSBMIDExOTQsMTI4OCBMIDExOTEsMTI4OCBMIDExODksMTI5MCBMIDExODUsMTI5MCBMIDExODQsMTI5MSBMIDExODEsMTI5MSBMIDExODAsMTI5MiBMIDExNzAsMTI5MiBMIDExNjksMTI5MSBMIDExNzAsMTI5MCBMIDExNzEsMTI5MCBMIDExNzIsMTI4OSBMIDExNzMsMTI4OSBMIDExNzQsMTI4OCBMIDExNzcsMTI4OCBMIDExNzgsMTI4NyBMIDExNzksMTI4NyBMIDExODAsMTI4NiBMIDExODEsMTI4NiBMIDExODIsMTI4NSBMIDExODUsMTI4NSBMIDExODYsMTI4NCBMIDExODgsMTI4NCBMIDExODksMTI4MyBMIDExOTEsMTI4MyBMIDExOTIsMTI4MiBMIDExOTMsMTI4MiBMIDExOTQsMTI4MSBMIDExOTYsMTI4MSBMIDExOTcsMTI4MCBMIDExOTgsMTI4MCBMIDExOTksMTI3OSBMIDEyMDEsMTI3OSBMIDEyMDIsMTI3OCBMIDEyMDQsMTI3OCBMIDEyMDUsMTI3NyBMIDEyMDYsMTI3NyBMIDEyMDcsMTI3NiBMIDEyMDksMTI3NiBMIDEyMTAsMTI3NSBMIDEyMTMsMTI3NSBMIDEyMTQsMTI3NCBMIDEyMTYsMTI3NCBMIDEyMTcsMTI3MyBMIDEyMTgsMTI3MyBMIDEyMTksMTI3MiBMIDEyMjEsMTI3MiBMIDEyMjIsMTI3MSBMIDEyMjQsMTI3MSBMIDEyMjUsMTI3MCBMIDEyMjcsMTI3MCBMIDEyMjgsMTI2OSBMIDEyMzAsMTI2OSBMIDEyMzEsMTI2OCBMIDEyMzIsMTI2OCBMIDEyMzMsMTI2NyBMIDEyMzUsMTI2NyBMIDEyMzYsMTI2NiBMIDEyMzksMTI2NiBMIDEyNDAsMTI2NSBMIDEyNDEsMTI2NSBMIDEyNDIsMTI2NCBMIDEyNDQsMTI2NCBMIDEyNDUsMTI2MyBMIDEyNDcsMTI2MyBMIDEyNDgsMTI2MiBMIDEyNDksMTI2MiBMIDEyNTAsMTI2MSBMIDEyNTMsMTI2MSBMIDEyNTQsMTI2MCBMIDEyNTUsMTI2MCBMIDEyNTYsMTI1OSBMIDEyNTcsMTI1OSBMIDEyNTgsMTI1OCBMIDEyNjEsMTI1OCBMIDEyNjIsMTI1NyBMIDEyNjQsMTI1NyBMIDEyNjUsMTI1NiBMIDEyNjcsMTI1NiBMIDEyNjgsMTI1NSBMIDEyNjksMTI1NSBMIDEyNzAsMTI1NCBMIDEyNzEsMTI1NCBMIDEyNzIsMTI1MyBMIDEyNzQsMTI1MyBMIDEyNzUsMTI1MiBMIDEyNzgsMTI1MiBMIDEyNzksMTI1MSBMIDEyODEsMTI1MSBMIDEyODIsMTI1MCBMIDEyODMsMTI1MCBMIDEyODQsMTI0OSBMIDEyODYsMTI0OSBMIDEyODcsMTI0OCBMIDEyODksMTI0OCBMIDEyOTAsMTI0NyBMIDEyOTIsMTI0NyBMIDEyOTMsMTI0NiBMIDEyOTUsMTI0NiBMIDEyOTYsMTI0NSBMIDEyOTcsMTI0NSBMIDEyOTgsMTI0NCBMIDEzMDAsMTI0NCBMIDEzMDEsMTI0MyBMIDEzMDMsMTI0MyBMIDEzMDQsMTI0MiBMIDEzMDYsMTI0MiBMIDEzMDcsMTI0MSBMIDEzMDgsMTI0MSBMIDEzMDksMTI0MCBMIDEzMTAsMTI0MCBMIDEzMTEsMTIzOSBMIDEzMTEsMTIzNyBMIDEzMDYsMTIzMiBMIDEzMDYsMTIzMSBMIDEzMDUsMTIzMSBMIDEzMDQsMTIzMCBMIDEzMDMsMTIzMCBMIDEzMDIsMTIyOSBMIDEzMDEsMTIzMCBMIDEzMDAsMTIzMCBMIDEyOTksMTIyOSBMIDEyOTksMTIzMCBMIDEyOTgsMTIzMSBMIDEyOTcsMTIzMCBMIDEyOTYsMTIzMCBMIDEyOTUsMTIzMSBMIDEyOTEsMTIzMSBMIDEyOTAsMTIzMiBMIDEyODksMTIzMSBMIDEyODgsMTIzMiBMIDEyODYsMTIzMiBMIDEyODYsMTIzMyBMIDEyODUsMTIzNCBMIDEyODQsMTIzMyBMIDEyODIsMTIzMyBMIDEyODIsMTIzNCBMIDEyODEsMTIzNSBMIDEyODAsMTIzNCBMIDEyNzcsMTIzNCBMIDEyNzYsMTIzNSBMIDEyNzIsMTIzNSBMIDEyNzEsMTIzNiBMIDEyNzAsMTIzNSBMIDEyNjksMTIzNiBMIDEyNjgsMTIzNiBMIDEyNjcsMTIzNyBMIDEyNjYsMTIzNiBMIDEyNjYsMTIzNyBMIDEyNjUsMTIzOCBMIDEyNjQsMTIzOCBMIDEyNjMsMTIzNyBMIDEyNjIsMTIzNyBMIDEyNjAsMTIzOSBMIDEyNTksMTIzOCBMIDEyNTgsMTIzOSBMIDEyNTMsMTIzOSBMIDEyNTIsMTI0MCBMIDEyNTAsMTI0MCBMIDEyNDksMTIzOSBMIDEyNDgsMTIzOSBMIDEyNDksMTI0MCBMIDEyNDgsMTI0MSBMIDEyNDUsMTI0MSBMIDEyNDQsMTI0MiBMIDEyNDMsMTI0MSBMIDEyNDEsMTI0MyBMIDEyNDAsMTI0MiBMIDEyMzcsMTI0MiBMIDEyMzYsMTI0MyBMIDEyMzUsMTI0MyBMIDEyMzQsMTI0MiBMIDEyMzEsMTI0NSBMIDEyMzAsMTI0NCBMIDEyMjgsMTI0NCBMIDEyMjgsMTI0NSBMIDEyMjcsMTI0NiBMIDEyMjUsMTI0NCBMIDEyMjQsMTI0NCBMIDEyMjIsMTI0NiBMIDEyMjEsMTI0NSBMIDEyMTcsMTI0NSBMIDEyMTYsMTI0NiBMIDEyMTUsMTI0NiBMIDEyMTQsMTI0NyBMIDEyMDYsMTI0NyBMIDEyMDUsMTI0OCBMIDExOTksMTI0OCBMIDExOTcsMTI0NiBMIDExOTgsMTI0NSBMIDExOTksMTI0NSBMIDEyMDAsMTI0NCBMIDEyMDIsMTI0NCBMIDEyMDMsMTI0MyBMIDEyMDYsMTI0MyBMIDEyMDcsMTI0MiBMIDEyMDksMTI0MiBMIDEyMTAsMTI0MSBMIDEyMTIsMTI0MSBMIDEyMTMsMTI0MCBMIDEyMTUsMTI0MCBMIDEyMTYsMTIzOSBMIDEyMTksMTIzOSBMIDEyMjAsMTIzOCBMIDEyMjQsMTIzOCBMIDEyMjUsMTIzNyBMIDEyMjcsMTIzNyBMIDEyMjgsMTIzNiBMIDEyMzAsMTIzNiBMIDEyMzEsMTIzNSBMIDEyMzQsMTIzNSBMIDEyMzUsMTIzNCBMIDEyMzksMTIzNCBMIDEyNDEsMTIzMiBMIDEyNDQsMTIzMiBMIDEyNDUsMTIzMSBMIDEyNDYsMTIzMSBMIDEyNDcsMTIzMCBMIDEyNTAsMTIzMCBMIDEyNTEsMTIyOSBMIDEyNTQsMTIyOSBMIDEyNTUsMTIyOCBMIDEyNTcsMTIyOCBMIDEyNTgsMTIyNyBMIDEyNTksMTIyNyBMIDEyNjAsMTIyNiBMIDEyNjIsMTIyNiBMIDEyNjMsMTIyNSBMIDEyNjYsMTIyNSBMIDEyNjcsMTIyNCBMIDEyNzAsMTIyNCBMIDEyNzEsMTIyMyBMIDEyNzIsMTIyMyBMIDEyNzMsMTIyMiBMIDEyNzUsMTIyMiBMIDEyNzYsMTIyMSBMIDEyNzksMTIyMSBMIDEyODAsMTIyMCBMIDEyODIsMTIyMCBMIDEyODMsMTIxOSBMIDEyODUsMTIxOSBMIDEyODYsMTIxOCBMIDEyODcsMTIxOCBMIDEyODgsMTIxNyBMIDEyOTAsMTIxNyBMIDEyOTEsMTIxNiBMIDEyOTMsMTIxNiBMIDEyOTQsMTIxNSBMIDEyOTYsMTIxNSBMIDEyOTcsMTIxNCBMIDEyOTgsMTIxNCBMIDEyOTgsMTIxMCBMIDEyOTcsMTIwOSBMIDEyOTcsMTIwOCBMIDEyOTYsMTIwNyBMIDEyOTQsMTIwOSBMIDEyOTMsMTIwOCBMIDEyODksMTIwOCBMIDEyODgsMTIwOSBMIDEyODQsMTIwOSBMIDEyODMsMTIxMCBMIDEyODIsMTIxMCBMIDEyODEsMTIwOSBMIDEyODAsMTIwOSBMIDEyNzksMTIwOCBMIDEyNzksMTIwOSBMIDEyNzgsMTIxMCBMIDEyNzcsMTIxMCBMIDEyNzYsMTIwOSBMIDEyNzcsMTIwOCBMIDEyNzYsMTIwOSBMIDEyNzUsMTIwOCBMIDEyNzMsMTIxMCBMIDEyNzEsMTIxMCBMIDEyNzAsMTIwOSBMIDEyNjksMTIxMCBMIDEyNTUsMTIxMCBMIDEyNTQsMTIxMSBMIDEyNTMsMTIxMCBMIDEyNDYsMTIxMCBMIDEyNDUsMTIwOSBMIDEyNDQsMTIxMCBMIDEyNDEsMTIxMCBMIDEyNDAsMTIwOSBMIDEyMzgsMTIwOSBMIDEyMzcsMTIxMCBMIDEyMzYsMTIxMCBMIDEyMzUsMTIwOSBMIDEyMzEsMTIwOSBMIDEyMzAsMTIwOCBMIDEyMzEsMTIwNyBMIDEyMzIsMTIwNyBMIDEyMzMsMTIwNiBMIDEyMzYsMTIwNiBMIDEyMzcsMTIwNSBMIDEyNDEsMTIwNSBMIDEyNDIsMTIwNCBMIDEyNDQsMTIwNCBMIDEyNDUsMTIwMyBMIDEyNDksMTIwMyBMIDEyNTAsMTIwMiBMIDEyNTUsMTIwMiBMIDEyNTYsMTIwMSBMIDEyNjEsMTIwMSBMIDEyNjIsMTIwMCBMIDEyNjYsMTIwMCBMIDEyNjcsMTE5OSBMIDEyNzAsMTE5OSBMIDEyNzEsMTE5OCBMIDEyNzksMTE5OCBMIDEyODAsMTE5NyBMIDEyODQsMTE5NyBMIDEyODUsMTE5NiBMIDEyODgsMTE5NiBMIDEyODksMTE5NSBMIDEyOTAsMTE5NSBMIDEyOTEsMTE5NCBMIDEyOTQsMTE5NCBMIDEyOTUsMTE5MyBMIDEyOTYsMTE5MyBMIDEyOTYsMTE4NyBMIDEyOTUsMTE4NyBMIDEyOTQsMTE4OCBMIDEyOTMsMTE4NyBMIDEyOTMsMTE4NiBMIDEyOTIsMTE4NyBMIDEyOTEsMTE4NiBMIDEyODgsMTE4NiBMIDEyODcsMTE4NSBMIDEyODYsMTE4NSBMIDEyODUsMTE4NiBMIDEyODQsMTE4NSBMIDEyODIsMTE4NSBMIDEyODEsMTE4NCBMIDEyNzksMTE4NCBMIDEyNzgsMTE4NSBMIDEyNzcsMTE4NCBMIDEyNzYsMTE4NCBMIDEyNzUsMTE4MyBMIDEyNzQsMTE4NCBMIDEyNzMsMTE4NCBMIDEyNzIsMTE4MyBMIDEyNzMsMTE4MiBMIDEyNzIsMTE4MiBMIDEyNzEsMTE4MyBMIDEyNjksMTE4MSBMIDEyNjgsMTE4MSBMIDEyNjYsMTE3OSBMIDEyNjUsMTE3OSBMIDEyNjQsMTE3OCBMIDEyNjYsMTE3NiBMIDEyNzIsMTE3NiBMIDEyNzMsMTE3NSBMIDEyNzQsMTE3NiBMIDEyNzUsMTE3NiBMIDEyNzYsMTE3NSBMIDEyNzcsMTE3NSBMIDEyNzgsMTE3NiBMIDEyNzksMTE3NSBMIDEyODAsMTE3NiBMIDEyODUsMTE3NiBMIDEyODYsMTE3NSBMIDEyODcsMTE3NiBMIDEyOTYsMTE3NiBMIDEyOTgsMTE3NCBMIDEyOTgsMTE2NyBMIDEyOTcsMTE2NiBMIDEyOTQsMTE2NiBMIDEyOTMsMTE2NSBMIDEyOTIsMTE2NSBMIDEyOTEsMTE2NCBMIDEyODgsMTE2NCBMIDEyODcsMTE2MyBMIDEyODUsMTE2MyBMIDEyODQsMTE2MiBMIDEyODQsMTE2MSBMIDEyODMsMTE2MSBMIDEyODEsMTE1OSBMIDEyODAsMTE1OSBMIDEyNzgsMTE1NyBMIDEyNzgsMTE1NiBMIDEyNzksMTE1NSBMIDEyODAsMTE1NSBMIDEyODEsMTE1NCBMIDEyODQsMTE1NCBMIDEyODUsMTE1NSBMIDEyODgsMTE1NSBMIDEyODksMTE1NiBMIDEyOTAsMTE1NSBMIDEyOTEsMTE1NiBMIDEyOTYsMTE1NiBMIDEyOTcsMTE1NyBMIDEzMDIsMTE1NyBMIDEzMDEsMTE1NiBMIDEzMDIsMTE1NSBMIDEzMDIsMTE1MyBMIDEzMDEsMTE1MyBMIDEzMDAsMTE1MiBMIDEyOTksMTE1MiBMIDEyOTgsMTE1MSBMIDEyOTgsMTE1MCBMIDEyOTcsMTE1MSBMIDEyOTYsMTE1MCBMIDEyOTYsMTE0OSBMIDEyOTUsMTE0OSBMIDEyOTQsMTE0OCBMIDEyOTMsMTE0OCBMIDEyOTEsMTE0NiBMIDEyOTAsMTE0NiBMIDEyODgsMTE0NCBMIDEyODcsMTE0NCBMIDEyODYsMTE0MyBMIDEyODUsMTE0MyBMIDEyODQsMTE0MiBMIDEyODUsMTE0MSBMIDEyODQsMTE0MSBMIDEyODAsMTEzNyBMIDEyODAsMTEzNSBMIDEyODEsMTEzNCBMIDEyODYsMTEzNCBMIDEyODcsMTEzNSBMIDEyODgsMTEzNSBMIDEyODksMTEzNiBMIDEyOTEsMTEzNiBMIDEyOTIsMTEzNyBMIDEyOTQsMTEzNyBMIDEyOTUsMTEzOCBMIDEyOTcsMTEzOCBMIDEyOTgsMTEzOSBMIDEzMDAsMTEzOSBMIDEzMDEsMTE0MCBMIDEzMDIsMTE0MCBMIDEzMDMsMTE0MSBMIDEzMDYsMTE0MSBMIDEzMDcsMTE0MiBMIDEzMDgsMTE0MiBMIDEzMTAsMTE0MCBMIDEzMTAsMTEzNiBMIDEzMDgsMTEzNCBMIDEzMDcsMTEzNCBMIDEzMDUsMTEzMiBMIDEzMDQsMTEzMiBMIDEzMDMsMTEzMSBMIDEzMDMsMTEzMCBMIDEzMDIsMTEyOSBMIDEzMDEsMTEyOSBMIDEyOTMsMTEyMSBMIDEyOTIsMTEyMSBMIDEyOTAsMTExOSBMIDEyOTAsMTExOCBMIDEyODksMTExNyBMIDEyODgsMTExNyBMIDEyNzgsMTEwNyBMIDEyNzgsMTEwNiBMIDEyNzYsMTEwNCBMIDEyNzYsMTEwMyBMIDEyNzcsMTEwMiBMIDEyNzgsMTEwMiBMIDEyNzksMTEwMSBMIDEyODAsMTEwMiBMIDEyODMsMTEwMiBMIDEyODUsMTEwNCBMIDEyODYsMTEwNCBMIDEyODcsMTEwNSBMIDEyODgsMTEwNSBMIDEyOTAsMTEwNyBMIDEyOTEsMTEwNyBMIDEyOTQsMTExMCBMIDEyOTUsMTExMCBMIDEyOTcsMTExMiBMIDEyOTgsMTExMiBMIDEzMDAsMTExNCBMIDEzMDEsMTExNCBMIDEzMDMsMTExNiBMIDEzMDQsMTExNiBMIDEzMDcsMTExOSBMIDEzMDgsMTExOSBMIDEzMDksMTEyMCBMIDEzMTAsMTEyMCBMIDEzMTMsMTEyMyBMIDEzMTQsMTEyMyBMIDEzMTUsMTEyNCBMIDEzMTYsMTEyNCBMIDEzMTgsMTEyNiBMIDEzMTksMTEyNiBMIDEzMjAsMTEyNyBMIDEzMjIsMTEyNyBMIDEzMjQsMTEyNSBMIDEzMjQsMTEyNCBMIDEzMjIsMTEyMiBMIDEzMjIsMTEyMSBMIDEzMjEsMTEyMSBMIDEzMjAsMTEyMCBMIDEzMjAsMTExOSBMIDEzMTMsMTExMiBMIDEzMTMsMTExMSBMIDEzMDYsMTEwNCBMIDEzMDYsMTEwMyBMIDEyOTQsMTA5MSBMIDEyOTQsMTA5MCBMIDEyOTEsMTA4NyBMIDEyOTEsMTA4NiBMIDEyODUsMTA4MCBMIDEyODUsMTA3OSBMIDEyODEsMTA3NSBMIDEyODEsMTA3NCBMIDEyNzYsMTA2OSBMIDEyNzYsMTA2OCBMIDEyNzUsMTA2NyBMIDEyNzUsMTA2NiBMIDEyNzQsMTA2NSBMIDEyNzQsMTA2MyBMIDEyNzUsMTA2MiBMIDEyNzcsMTA2MiBMIDEyNzgsMTA2MyBMIDEyNzksMTA2MyBMIDEyODAsMTA2NCBMIDEyODEsMTA2NCBMIDEyODIsMTA2NSBMIDEyODMsMTA2NSBMIDEyODYsMTA2OCBMIDEyODcsMTA2OCBMIDEyOTIsMTA3MyBMIDEyOTMsMTA3MyBMIDEyOTksMTA3OSBMIDEzMDAsMTA3OSBMIDEzMDEsMTA4MCBMIDEzMDEsMTA4MSBMIDEzMDMsMTA4MyBMIDEzMDQsMTA4MyBMIDEzMTgsMTA5NyBMIDEzMTksMTA5NyBMIDEzMjAsMTA5OCBMIDEzMjAsMTA5OSBMIDEzMjIsMTEwMSBMIDEzMjMsMTEwMSBMIDEzMjUsMTEwMyBMIDEzMjUsMTEwNCBMIDEzMjYsMTEwNCBMIDEzMzAsMTEwOCBMIDEzMzAsMTEwOSBMIDEzMzEsMTEwOSBMIDEzMzUsMTExMyBMIDEzMzYsMTExMyBMIDEzMzcsMTExNCBMIDEzMzcsMTExNSBMIDEzMzgsMTExNiBMIDEzNDMsMTExNiBMIDEzNDMsMTExNSBMIDEzNDIsMTExNCBMIDEzNDIsMTExMyBMIDEzNDAsMTExMSBMIDEzNDAsMTExMCBMIDEzMzksMTEwOSBMIDEzMzksMTEwOCBMIDEzMzgsMTEwNyBMIDEzMzgsMTEwNiBMIDEzMzcsMTEwNSBMIDEzMzcsMTEwNCBMIDEzMzUsMTEwMiBMIDEzMzUsMTEwMSBMIDEzMzQsMTEwMCBMIDEzMzQsMTA5OSBMIDEzMzMsMTA5OCBMIDEzMzMsMTA5NyBMIDEzMzEsMTA5NSBMIDEzMzEsMTA5MyBMIDEzMjksMTA5MSBMIDEzMjksMTA4OSBMIDEzMjgsMTA4OCBMIDEzMjgsMTA4NyBMIDEzMjYsMTA4NSBMIDEzMjYsMTA4MSBMIDEzMjUsMTA4MCBMIDEzMjYsMTA3OSBMIDEzMjksMTA3OSBMIDEzMzAsMTA4MCBMIDEzMzEsMTA4MCBMIDEzMzcsMTA4NiBMIDEzMzcsMTA4NyBMIDEzNDAsMTA5MCBMIDEzNDAsMTA5MSBMIDEzNDEsMTA5MSBMIDEzNDMsMTA5MyBMIDEzNDMsMTA5NCBMIDEzNDgsMTA5OSBMIDEzNDgsMTEwMCBMIDEzNTAsMTEwMiBMIDEzNTAsMTEwMyBMIDEzNTgsMTExMSBMIDEzNTgsMTExMiBMIDEzNTksMTExMyBMIDEzNjAsMTExMyBMIDEzNjEsMTExNCBMIDEzNjcsMTExNCBMIDEzNjcsMTExMiBMIDEzNjYsMTExMSBMIDEzNjYsMTEwNSBMIDEzNjUsMTEwNCBMIDEzNjUsMTA5OSBMIDEzNjcsMTA5NyBMIDEzNjgsMTA5NyBMIDEzNjksMTA5OCBMIDEzNzAsMTA5OCBMIDEzNzEsMTA5OSBMIDEzNzEsMTEwMCBMIDEzNzIsMTEwMSBMIDEzNzMsMTEwMSBMIDEzNzQsMTEwMiBMIDEzNzQsMTEwMyBMIDEzNzUsMTEwNCBMIDEzNzUsMTEwNSBMIDEzNzcsMTEwNyBMIDEzNzcsMTEwOCBMIDEzNzgsMTEwOSBMIDEzNzgsMTExMCBMIDEzNzksMTExMSBMIDEzNzksMTExMiBMIDEzODAsMTExMyBMIDEzODAsMTExNCBMIDEzODIsMTExNiBMIDEzODIsMTExNyBMIDEzODMsMTExNyBMIDEzODQsMTExOCBMIDEzODcsMTExOCBMIDEzODgsMTExOSBMIDEzOTAsMTExOSBMIDEzOTEsMTEyMCBMIDEzOTMsMTEyMCBMIDEzOTQsMTEyMSBMIDEzOTYsMTEyMSBMIDEzOTgsMTEyMyBMIDEzOTksMTEyMyBMIDE0MDAsMTEyNCBMIDE0MDEsMTEyNCBMIDE0MDIsMTEyNSBMIDE0MDMsMTEyNSBMIDE0MDQsMTEyNiBMIDE0MDUsMTEyNiBMIDE0MDgsMTEyOSBMIDE0MDksMTEyOSBMIDE0MDksMTEyOCBMIDE0MDgsMTEyNyBMIDE0MDgsMTEyNiBMIDE0MDcsMTEyNSBMIDE0MDcsMTEyNCBMIDE0MDQsMTEyMSBMIDE0MDQsMTEyMCBMIDE0MDIsMTExOCBMIDE0MDIsMTExNyBMIDEzOTksMTExNCBMIDEzOTksMTExMyBMIDEzOTgsMTExMiBMIDEzOTgsMTExMSBMIDEzOTcsMTExMCBMIDEzOTYsMTExMCBMIDEzOTUsMTEwOSBMIDEzOTUsMTEwOCBMIDEzOTMsMTEwNiBMIDEzOTIsMTEwNiBMIDEzODgsMTEwMiBMIDEzODcsMTEwMiBMIDEzODUsMTEwMCBMIDEzODQsMTEwMCBMIDEzODAsMTA5NiBMIDEzNzksMTA5NyBMIDEzNzgsMTA5NiBMIDEzNzgsMTA5NSBMIDEzNzcsMTA5NSBMIDEzNzUsMTA5MyBMIDEzNzQsMTA5MyBMIDEzNzMsMTA5MiBMIDEzNzIsMTA5MiBMIDEzNzEsMTA5MSBMIDEzNzAsMTA5MSBMIDEzNjksMTA5MCBMIDEzNjgsMTA5MCBMIDEzNjcsMTA4OSBMIDEzNjYsMTA4OSBMIDEzNjUsMTA4OCBMIDEzNjMsMTA4OCBMIDEzNjEsMTA4NiBMIDEzNTksMTA4NiBMIDEzNTgsMTA4NSBMIDEzNTcsMTA4NSBMIDEzNTYsMTA4NCBMIDEzNTUsMTA4NCBMIDEzNTQsMTA4MyBMIDEzNTMsMTA4MyBMIDEzNTIsMTA4MiBMIDEzNTAsMTA4MiBMIDEzNDcsMTA3OSBMIDEzNDYsMTA4MCBMIDEzNDUsMTA3OSBMIDEzNDUsMTA3OCBMIDEzNDMsMTA3OCBMIDEzNDIsMTA3NyBMIDEzMzksMTA3NyBMIDEzMzgsMTA3NiBMIDEzMzgsMTA3NSBMIDEzMzcsMTA3NSBMIDEzMzYsMTA3NCBMIDEzMzQsMTA3NCBMIDEzMzMsMTA3MyBMIDEzMzEsMTA3MyBMIDEzMzAsMTA3MiBMIDEzMjksMTA3MiBMIDEzMjgsMTA3MSBMIDEzMjcsMTA3MSBMIDEzMjUsMTA2OSBMIDEzMjMsMTA2OSBMIDEzMjIsMTA2OCBMIDEzMjEsMTA2OCBMIDEzMjAsMTA2NyBMIDEzMTksMTA2NyBMIDEzMTcsMTA2NSBMIDEzMTQsMTA2NSBMIDEzMTMsMTA2NCBMIDEzMTIsMTA2NCBMIDEzMTEsMTA2MyBMIDEzMDksMTA2MyBMIDEzMDgsMTA2MiBMIDEzMDcsMTA2MiBMIDEzMDYsMTA2MSBMIDEzMDUsMTA2MSBMIDEzMDMsMTA1OSBMIDEzMDIsMTA1OSBMIDEzMDEsMTA2MCBMIDEzMDAsMTA1OSBMIDEyOTksMTA1OSBMIDEyOTgsMTA1OCBMIDEyOTgsMTA1NyBMIDEyOTcsMTA1NyBMIDEyOTYsMTA1OCBMIDEyOTMsMTA1NSBMIDEyOTIsMTA1NiBMIDEyOTEsMTA1NSBMIDEyOTAsMTA1NSBMIDEyODksMTA1NCBMIDEyODYsMTA1NCBMIDEyODQsMTA1MiBMIDEyODMsMTA1MiBMIDEyODIsMTA1MSBMIDEyNzksMTA1MSBMIDEyNzgsMTA1MCBMIDEyNzcsMTA1MCBMIDEyNzUsMTA0OCBMIDEyNzQsMTA0OSBMIDEyNzEsMTA0NiBMIDEyNzAsMTA0NyBMIDEyNjksMTA0NiBMIDEyNjgsMTA0NiBMIDEyNjcsMTA0NSBMIDEyNjQsMTA0NSBMIDEyNjMsMTA0NCBMIDEyNjMsMTA0MyBMIDEyNjEsMTA0MyBMIDEyNjAsMTA0MiBMIDEyNTksMTA0MiBMIDEyNTgsMTA0MSBMIDEyNTUsMTA0MSBMIDEyNTMsMTAzOSBMIDEyNTEsMTAzOSBMIDEyNTAsMTAzOCBMIDEyNDksMTAzOCBMIDEyNDgsMTAzNyBMIDEyNDgsMTAzOSBMIDEyNDcsMTA0MCBMIDEyNDgsMTA0MSBMIDEyNDgsMTA0NCBMIDEyNDcsMTA0NSBMIDEyNDcsMTA1MiBMIDEyNDgsMTA1MyBMIDEyNDgsMTA2MCBMIDEyNDksMTA2MSBMIDEyNDksMTA2NCBMIDEyNTAsMTA2NSBMIDEyNTAsMTA2NyBMIDEyNTEsMTA2OCBMIDEyNTAsMTA2OSBMIDEyNTIsMTA3MSBMIDEyNTEsMTA3MiBMIDEyNTEsMTA3NCBMIDEyNTIsMTA3NSBMIDEyNTIsMTA3OCBMIDEyNTMsMTA3OSBMIDEyNTMsMTA4MiBMIDEyNTQsMTA4MyBMIDEyNTQsMTA4NCBMIDEyNTUsMTA4NSBMIDEyNTUsMTA4NiBMIDEyNTYsMTA4NyBMIDEyNTYsMTA5MCBMIDEyNTcsMTA5MSBMIDEyNTcsMTA5MiBMIDEyNTgsMTA5MyBMIDEyNTgsMTA5OCBMIDEyNjAsMTEwMCBMIDEyNjAsMTEwNSBMIDEyNjEsMTEwNiBMIDEyNjEsMTEwOSBMIDEyNjIsMTExMCBMIDEyNjIsMTExMSBMIDEyNjEsMTExMiBMIDEyNjEsMTExMyBMIDEyNjIsMTExNCBMIDEyNjEsMTExNSBMIDEyNjIsMTExNiBMIDEyNjIsMTExOCBMIDEyNjMsMTExOSBMIDEyNjMsMTEyMCBMIDEyNjIsMTEyMSBMIDEyNjIsMTEyMyBMIDEyNjMsMTEyNCBMIDEyNjMsMTEzOSBMIDEyNjIsMTE0MCBMIDEyNjIsMTE0MSBMIDEyNjMsMTE0MiBMIDEyNjMsMTE0NCBMIDEyNjEsMTE0NiBMIDEyNjEsMTE1MSBMIDEyNjIsMTE1MiBMIDEyNjEsMTE1MyBMIDEyNjAsMTE1MyBMIDEyNjAsMTE1NSBMIDEyNTksMTE1NiBMIDEyNjAsMTE1NyBMIDEyNTksMTE1OCBMIDEyNTgsMTE1OCBMIDEyNTgsMTE1OSBMIDEyNTYsMTE2MSBMIDEyNTYsMTE2NCBMIDEyNTUsMTE2NSBMIDEyNTQsMTE2NSBMIDEyNTMsMTE2NiBMIDEyNTMsMTE2OCBMIDEyNTIsMTE2OSBMIDEyNTIsMTE3MCBMIDEyNTEsMTE3MSBMIDEyNTAsMTE3MSBMIDEyNTEsMTE3MSBMIDEyNTIsMTE3MiBMIDEyNTEsMTE3MyBMIDEyNDksMTE3MyBMIDEyNDgsMTE3NCBMIDEyNDgsMTE3NSBMIDEyNDcsMTE3NiBMIDEyNDYsMTE3NiBMIDEyNDcsMTE3NyBMIDEyNDUsMTE3OSBMIDEyNDQsMTE3OSBMIDEyNDMsMTE4MCBMIDEyNDMsMTE4MSBMIDEyNDIsMTE4MiBMIDEyNDEsMTE4MiBMIDEyNDEsMTE4MyBMIDEyMzcsMTE4NyBMIDEyMzcsMTE4OCBMIDEyMzYsMTE4OSBMIDEyMzQsMTE4OSBMIDEyMzQsMTE5MCBMIDEyMzMsMTE5MSBMIDEyMzIsMTE5MSBMIDEyMzIsMTE5MiBMIDEyMzEsMTE5MyBMIDEyMzAsMTE5MyBMIDEyMjcsMTE5NiBMIDEyMjcsMTE5NyBMIDEyMjYsMTE5OCBMIDEyMjUsMTE5OCBMIDEyMjUsMTE5OSBMIDEyMjQsMTIwMCBMIDEyMjMsMTIwMCBMIDEyMjMsMTIwMSBMIDEyMjIsMTIwMiBMIDEyMjEsMTIwMSBMIDEyMTcsMTIwNSBMIDEyMTYsMTIwNSBMIDEyMTQsMTIwNyBMIDEyMTMsMTIwNyBMIDEyMTAsMTIxMCBMIDEyMDksMTIxMCBMIDEyMDUsMTIxNCBMIDEyMDQsMTIxNCBMIDEyMDEsMTIxNyBMIDEyMDAsMTIxNyBMIDExOTcsMTIyMCBMIDExOTYsMTIyMCBMIDExOTQsMTIyMiBMIDExOTMsMTIyMiBMIDExOTAsMTIyNSBMIDExODksMTIyNSBMIDExODcsMTIyNyBMIDExODcsMTIyOCBMIDExODYsMTIyOSBMIDExODUsMTIyOCBMIDExODUsMTIyOSBMIDExODQsMTIzMCBMIDExODMsMTIzMCBMIDExODMsMTIzMSBMIDExODEsMTIzMyBMIDExODAsMTIzMiBMIDExODAsMTIzMyBMIDExNzksMTIzNCBMIDExNzgsMTIzNCBMIDExNzgsMTIzNSBMIDExNzQsMTIzOSBMIDExNzMsMTIzOSBMIDExNzMsMTI0MCBMIDExNzIsMTI0MSBMIDExNzEsMTI0MSBMIDExNjgsMTI0NCBMIDExNjcsMTI0NCBMIDExNjIsMTI0OSBMIDExNjIsMTI1MCBMIDExNjEsMTI1MSBMIDExNjAsMTI1MSBMIDExNjAsMTI1MiBMIDExNTksMTI1MyBMIDExNTgsMTI1MiBMIDExNTgsMTI1NCBMIDExNTEsMTI2MSBMIDExNTEsMTI2MyBMIDExNDgsMTI2NiBMIDExNDgsMTI2NyBMIDExNDYsMTI2OSBMIDExNDYsMTI3MCBMIDExNDUsMTI3MSBMIDExNDUsMTI3MiBMIDExNDQsMTI3MyBMIDExNDQsMTI3NCBMIDExNDIsMTI3NiBMIDExNDIsMTI3OCBMIDExNDEsMTI3OSBMIDExNDEsMTI4MCBMIDExNDAsMTI4MSBMIDExNDAsMTI4MyBMIDExMzgsMTI4NSBMIDExMzgsMTI4OSBMIDExMzcsMTI5MCBMIDExMzcsMTMwMyBMIDExMzgsMTMwNCBMIDExMzgsMTMwNSBMIDExMzksMTMwNiBMIDExMzksMTMwNyBMIDExNDQsMTMxMiBMIDExNDUsMTMxMiBMIDExNDYsMTMxMyBMIDExNDcsMTMxMyBMIDExNDgsMTMxNCBMIDExNDksMTMxNCBMIDExNTAsMTMxNSBMIDExNTIsMTMxNSBMIDExNTMsMTMxNiBMIDExNTksMTMxNiBMIDExNjAsMTMxNyBMIDExOTQsMTMxNyBMIDExOTUsMTMxNiBMIDEyMDMsMTMxNiBMIDEyMDQsMTMxNSBMIDEyMDUsMTMxNiBMIDEyMDYsMTMxNiBMIDEyMDcsMTMxNSBMIDEyMTIsMTMxNSBMIDEyMTMsMTMxNCBMIDEyMTUsMTMxNCBMIDEyMTYsMTMxMyBMIDEyMTgsMTMxMyBMIDEyMTksMTMxMiBMIDEyMjAsMTMxMyBMIDEyMjEsMTMxMiBMIDEyMjMsMTMxMiBMIDEyMjQsMTMxMSBMIDEyMzAsMTMxMSBMIDEyMzEsMTMxMCBMIDEyMzIsMTMxMCBMIDEyMzMsMTMwOSBMIDEyMzUsMTMwOSBMIDEyMzYsMTMwOCBMIDEyNDAsMTMwOCBMIDEyNDEsMTMwNyBMIDEyNDYsMTMwNyBMIDEyNDcsMTMwNiBMIDEyNTAsMTMwNiBMIDEyNTEsMTMwNSBMIDEyNTMsMTMwNSBMIDEyNTQsMTMwNCBMIDEyNTUsMTMwNCBMIDEyNTYsMTMwMyBMIDEyNjAsMTMwMyBMIDEyNjEsMTMwMiBMIDEyNjMsMTMwMiBMIDEyNjQsMTMwMSBMIDEyNjcsMTMwMSBMIDEyNjgsMTMwMCBMIDEyNjksMTMwMCBMIDEyNzAsMTI5OSBMIDEyNzIsMTI5OSBMIDEyNzMsMTI5OCBMIDEyNzYsMTI5OCBMIDEyNzcsMTI5NyBMIDEyODAsMTI5NyBMIDEyODEsMTI5NiBMIDEyODIsMTI5NiBMIDEyODMsMTI5NSBMIDEyODUsMTI5NSBMIDEyODYsMTI5NCBMIDEyODgsMTI5NCBMIDEyODksMTI5MyBMIDEyOTEsMTI5MyBMIDEyOTIsMTI5MiBMIDEyOTMsMTI5MiBMIDEyOTQsMTI5MSBMIDEyOTYsMTI5MSBMIDEyOTcsMTI5MCBMIDEyOTksMTI5MCBMIDEzMDAsMTI4OSBMIDEzMDMsMTI4OSBMIDEzMDQsMTI4OCBMIDEzMDYsMTI4OCBMIDEzMDcsMTI4NyBMIDEzMDksMTI4NyBMIDEzMTAsMTI4NiBMIDEzMTEsMTI4NiBMIDEzMTIsMTI4NSBMIDEzMTQsMTI4NSBMIDEzMTUsMTI4NCBMIDEzMTksMTI4NCBMIDEzMjEsMTI4MiBMIDEzMjIsMTI4MiBMIDEzMjMsMTI4MSBMIDEzMjYsMTI4MSBMIDEzMjcsMTI4MCBMIDEzMjksMTI4MCBMIDEzMzAsMTI3OSBMIDEzMzMsMTI3OSBMIDEzMzQsMTI3OCBMIDEzMzcsMTI3OCBMIDEzMzgsMTI3NyBMIDEzMzksMTI3NyBMIDEzNDAsMTI3NiBMIDEzNDIsMTI3NiBMIDEzNDMsMTI3NSBMIDEzNDYsMTI3NSBMIDEzNDcsMTI3NCBMIDEzNTMsMTI3NCBMIDEzNTQsMTI3MyBMIDEzNTYsMTI3MyBMIDEzNTcsMTI3MiBMIDEzNjAsMTI3MiBMIDEzNjEsMTI3MSBMIDEzNjUsMTI3MSBMIDEzNjYsMTI3MCBMIDEzNjcsMTI3MCBMIDEzNjgsMTI3MSBMIDEzNjksMTI3MCBMIDE0MDQsMTI3MCBMIDE0MDUsMTI3MSBMIDE0MDgsMTI3MSBMIDE0MDksMTI3MiBMIDE0MTEsMTI3MiBMIDE0MTIsMTI3MyBMIDE0MTUsMTI3MyBMIDE0MTYsMTI3NCBMIDE0MTcsMTI3NCBMIDE0MTgsMTI3NSBMIDE0MjEsMTI3NSBMIDE0MjUsMTI3OSBMIDE0MjQsMTI4MCBMIDE0MjMsMTI4MCBMIDE0MjMsMTI4MSBMIDE0MjIsMTI4MiBMIDE0MjIsMTI4MyBMIDE0MjEsMTI4NCBMIDE0MjAsMTI4MyBMIDE0MTksMTI4NCBMIDE0MTgsMTI4NCBMIDE0MTcsMTI4MyBMIDE0MTYsMTI4MyBMIDE0MTUsMTI4NCBMIDE0MTIsMTI4NCBMIDE0MTEsMTI4NSBMIDE0MTAsMTI4NCBMIDE0MDgsMTI4NCBMIDE0MDcsMTI4NSBMIDE0MDIsMTI4NSBMIDE0MDEsMTI4NiBMIDE0MDAsMTI4NSBMIDEzOTgsMTI4NSBMIDEzOTYsMTI4NyBMIDEzOTMsMTI4NyBMIDEzOTIsMTI4OCBMIDEzOTAsMTI4OCBMIDEzODksMTI4OSBMIDEzODksMTI5MSBMIDEzODgsMTI5MiBMIDEzODcsMTI5MSBMIDEzODUsMTI5MyBMIDEzODcsMTI5NSBMIDEzODYsMTI5NiBMIDEzODUsMTI5NiBMIDEzODYsMTI5NyBMIDEzODYsMTMwMCBMIDEzODcsMTMwMSBMIDEzODcsMTMwMyBMIDEzODgsMTMwNCBMIDEzODgsMTMwNyBMIDEzODksMTMwOCBMIDEzODksMTMxMCBMIDEzOTEsMTMxMiBMIDEzOTAsMTMxMyBMIDEzOTEsMTMxNCBMIDEzOTAsMTMxNSBMIDEzOTAsMTMxNiBMIDEzOTEsMTMxNyBMIDEzOTEsMTMyMCBMIDEzOTIsMTMyMSBMIDEzOTIsMTMyOCBMIDEzOTEsMTMyOSBMIDEzOTIsMTMzMCBMIDEzOTIsMTMzMyBMIDEzOTEsMTMzNCBMIDEzOTEsMTMzNiBMIDEzOTIsMTMzNyBMIDEzOTEsMTMzOCBMIDEzOTIsMTMzOSBMIDEzOTEsMTM0MCBMIDEzOTEsMTM0NiBMIDEzOTAsMTM0NyBMIDEzOTEsMTM0OCBMIDEzOTEsMTM0OSBMIDEzOTAsMTM1MCBMIDEzOTAsMTM1MSBMIDEzODksMTM1MiBMIDEzODksMTM1NCBMIDEzODgsMTM1NSBMIDEzODgsMTM1OSBMIDEzODcsMTM2MCBMIDEzODYsMTM2MCBMIDEzODYsMTM2MSBMIDEzODUsMTM2MiBMIDEzODUsMTM2NCBMIDEzODQsMTM2NSBMIDEzODQsMTM2OCBMIDEzODIsMTM3MCBMIDEzODIsMTM3MiBMIDEzODAsMTM3NCBMIDEzODEsMTM3NCBMIDEzODIsMTM3NSBMIDEzODEsMTM3NiBMIDEzODEsMTM3NyBMIDEzODMsMTM3OSBMIDEzODQsMTM3OSBMIDEzODUsMTM4MCBMIDEzODksMTM4MCBMIDEzOTAsMTM4MSBMIDE0MjMsMTM4MSBMIDE0MjQsMTM4MCBMIDE0MzEsMTM4MCBMIDE0MzIsMTM3OSBMIDE0MzYsMTM3OSBMIDE0MzcsMTM3OCBMIDE0MzgsMTM3OCBMIDE0MzksMTM3NyBMIDE0NDIsMTM3NyBMIDE0NDMsMTM3NiBMIDE0NDYsMTM3NiBMIDE0NDcsMTM3NSBMIDE0NTAsMTM3NSBMIDE0NTIsMTM3MyBMIDE0NTMsMTM3MyBMIDE0NTQsMTM3MiBMIDE0NTYsMTM3MiBMIDE0NTcsMTM3MSBMIDE0NTksMTM3MSBMIDE0NjAsMTM3MCBMIDE0NjIsMTM3MCBMIDE0NjMsMTM2OSBMIDE0NjQsMTM2OSBMIDE0NjUsMTM2OCBMIDE0NjYsMTM2OCBMIDE0NjcsMTM2NyBMIDE0NjgsMTM2NyBMIDE0NjksMTM2NiBMIDE0NzEsMTM2NiBMIDE0NzIsMTM2NSBMIDE0NzQsMTM2NSBMIDE0NzUsMTM2NCBMIDE0NzYsMTM2NCBMIDE0NzcsMTM2MyBMIDE0NzgsMTM2MyBMIDE0NzksMTM2MiBMIDE0ODEsMTM2MiBMIDE0ODIsMTM2MSBMIDE0ODMsMTM2MSBMIDE0ODQsMTM2MCBMIDE0ODUsMTM2MCBMIDE0ODYsMTM1OSBMIDE0ODcsMTM1OSBMIDE0ODgsMTM1OCBMIDE0ODksMTM1OCBMIDE0OTAsMTM1NyBMIDE0OTEsMTM1NyBMIDE0OTIsMTM1NiBMIDE0OTMsMTM1NiBMIDE0OTQsMTM1NSBMIDE0OTUsMTM1NSBMIDE0OTcsMTM1MyBMIDE0OTgsMTM1MyBMIDE0OTksMTM1MiBMIDE1MDAsMTM1MiBMIDE1MDEsMTM1MSBMIDE1MDIsMTM1MSBMIDE1MDIsMTM1MCBMIDE1MDMsMTM0OSBMIDE1MDQsMTM0OSBMIDE1MDYsMTM0NyBMIDE1MDcsMTM0NyBMIDE1MDksMTM0NSBMIDE1MTAsMTM0NSBMIDE1MTMsMTM0MiBMIDE1MTQsMTM0MiBMIDE1MTQsMTM0MSBMIDE1MTUsMTM0MCBMIDE1MTYsMTM0MCBMIDE1MTcsMTMzOSBMIDE1MTgsMTMzOSBMIDE1MjQsMTMzMyBMIDE1MjUsMTMzMyBMIDE1MjUsMTMzMiBMIDE1MjcsMTMzMCBMIDE1MjgsMTMzMCBMIDE1MjgsMTMyOSBMIDE1MjksMTMyOCBMIDE1MzAsMTMyOCBMIDE1MzEsMTMyNyBMIDE1MzEsMTMyNiBMIDE1MzYsMTMyMSBMIDE1MzYsMTMyMCBMIDE1NDEsMTMxNSBMIDE1NDEsMTMxNCBMIDE1NDIsMTMxMyBMIDE1NDIsMTMxMiBMIDE1NDUsMTMwOSBMIDE1NDUsMTMwOCBMIDE1NTIsMTMwMSBMIDE1NTIsMTMwMCBMIDE1NTMsMTI5OSBMIDE1NTQsMTMwMCBMIDE1NTQsMTMwNyBMIDE1NTMsMTMwOCBMIDE1NTMsMTMxNCBMIDE1NTEsMTMxNiBMIDE1NTEsMTMxNyBMIDE1NDksMTMxOSBMIDE1NDksMTMyMCBMIDE1NDgsMTMyMSBMIDE1NDgsMTMyMiBMIDE1NDcsMTMyMyBMIDE1NDcsMTMyNCBMIDE1NDUsMTMyNiBMIDE1NDUsMTMyOCBMIDE1NDQsMTMyOSBMIDE1NDQsMTMzMCBMIDE1NDMsMTMzMSBMIDE1NDIsMTMzMSBMIDE1NDMsMTMzMSBMIDE1NDQsMTMzMiBMIDE1NDYsMTMzMiBMIDE1NDcsMTMzMyBMIDE1ODQsMTMzMyBMIDE1ODUsMTMzMiBMIDE1OTAsMTMzMiBMIDE1OTEsMTMzMSBMIDE1OTcsMTMzMSBMIDE1OTgsMTMzMCBMIDE2MDEsMTMzMCBMIDE2MDIsMTMyOSBMIDE2MDYsMTMyOSBMIDE2MDcsMTMyOCBMIDE2MDksMTMyOCBMIDE2MTAsMTMyNyBMIDE2MTMsMTMyNyBMIDE2MTQsMTMyNiBMIDE2MTYsMTMyNiBMIDE2MTcsMTMyNSBMIDE2MTksMTMyNSBMIDE2MjAsMTMyNCBMIDE2MjMsMTMyNCBMIDE2MjQsMTMyMyBMIDE2MjUsMTMyMyBMIDE2MjYsMTMyMiBMIDE2MjksMTMyMiBMIDE2MzAsMTMyMSBMIDE2MzEsMTMyMSBMIDE2MzIsMTMyMCBMIDE2MzUsMTMyMCBMIDE2MzYsMTMxOSBMIDE2MzcsMTMxOSBMIDE2MzgsMTMxOCBMIDE2MzksMTMxOCBMIDE2NDAsMTMxNyBMIDE2NDIsMTMxNyBMIDE2NDMsMTMxNiBMIDE2NDUsMTMxNiBMIDE2NDYsMTMxNSBMIDE2NDgsMTMxNSBMIDE2NDksMTMxNCBMIDE2NTAsMTMxNCBMIDE2NTEsMTMxMyBMIDE2NTMsMTMxMyBMIDE2NTQsMTMxMiBMIDE2NTUsMTMxMiBMIDE2NTYsMTMxMSBMIDE2NTgsMTMxMSBMIDE2NTksMTMxMCBMIDE2NjAsMTMxMCBMIDE2NjIsMTMwOCBMIDE2NjMsMTMwOCBMIDE2NjQsMTMwNyBMIDE2NjUsMTMwNyBMIDE2NjYsMTMwNiBMIDE2NjcsMTMwNiBMIDE2NzAsMTMwMyBMIDE2NzEsMTMwMyBMIDE2NzIsMTMwMiBMIDE2NzMsMTMwMiBMIDE2NzQsMTMwMSBMIDE2NzUsMTMwMSBMIDE2NzUsMTMwMCBMIDE2NzYsMTI5OSBMIDE2NzgsMTI5OSBMIDE2ODAsMTI5NyBMIDE2ODEsMTI5NyBMIDE2ODQsMTI5NCBMIDE2ODUsMTI5NCBMIDE2ODcsMTI5MiBMIDE2ODgsMTI5MiBMIDE2OTIsMTI4OCBMIDE2OTMsMTI4OCBMIDE2OTMsMTI4NyBMIDE2OTUsMTI4NSBMIDE2OTYsMTI4NSBMIDE2OTYsMTI4NCBMIDE2OTcsMTI4MyBMIDE2OTcsMTI4MCBMIDE2OTYsMTI4MCBMIDE2OTUsMTI3OSBMIDE2OTMsMTI3OSBMIDE2OTIsMTI3OCBMIDE2OTEsMTI3OCBMIDE2ODksMTI3NiBMIDE2ODcsMTI3NiBMIDE2ODYsMTI3NSBMIDE2ODUsMTI3NSBMIDE2ODQsMTI3NCBMIDE2ODMsMTI3NCBMIDE2ODEsMTI3MiBMIDE2ODAsMTI3MiBMIDE2NzgsMTI3MCBMIDE2NzcsMTI3MCBMIDE2NzYsMTI2OSBMIDE2NzUsMTI2OSBMIDE2NzMsMTI2NyBMIDE2NzIsMTI2NyBMIDE2NzAsMTI2NSBMIDE2NjksMTI2NSBMIDE2NjcsMTI2MyBMIDE2NjYsMTI2MyBMIDE2NjQsMTI2MSBMIDE2NjMsMTI2MSBMIDE2NjIsMTI2MCBMIDE2NjIsMTI1OSBMIDE2NjEsMTI1OSBMIDE2NjAsMTI1OCBMIDE2NTksMTI1OCBMIDE2NTgsMTI1NyBMIDE2NTcsMTI1NyBMIDE2NTYsMTI1NiBMIDE2NTYsMTI1NSBMIDE2NTQsMTI1MyBMIDE2NTMsMTI1MyBMIDE2NTEsMTI1MSBMIDE2NTAsMTI1MSBMIDE2NDYsMTI0NyBMIDE2NDUsMTI0NyBMIDE2NDQsMTI0NiBMIDE2NDQsMTI0NSBMIDE2NDMsMTI0NSBMIDE2NDAsMTI0MiBMIDE2MzksMTI0MiBMIDE2MzcsMTI0MCBMIDE2MzcsMTIzOSBMIDE2MzUsMTIzNyBMIDE2MzQsMTIzNyBMIDE2MzMsMTIzNiBMIDE2MzMsMTIzNSBMIDE2MjksMTIzMSBMIDE2MjksMTIzMCBMIDE2MjQsMTIyNSBMIDE2MjQsMTIyNCBMIDE2MjIsMTIyMiBMIDE2MjIsMTIyMSBMIDE2MTgsMTIxNyBMIDE2MTgsMTIxNiBMIDE2MTYsMTIxNCBMIDE2MTYsMTIxMyBMIDE2MTUsMTIxMiBMIDE2MTUsMTIxMSBMIDE2MTMsMTIwOSBMIDE2MTMsMTIwOCBMIDE2MTAsMTIwNSBMIDE2MTAsMTIwNCBMIDE2MDksMTIwMyBMIDE2MDksMTIwMiBMIDE2MDgsMTIwMSBMIDE2MDgsMTIwMCBMIDE2MDcsMTE5OSBMIDE2MDcsMTE5OCBMIDE2MDUsMTE5NiBMIDE2MDUsMTE5NSBMIDE2MDQsMTE5NCBMIDE2MDQsMTE5MyBMIDE2MDMsMTE5MiBMIDE2MDMsMTE5MSBMIDE2MDIsMTE5MCBMIDE2MDIsMTE4OSBMIDE2MDEsMTE4OCBMIDE2MDEsMTE4NyBMIDE2MDAsMTE4NiBMIDE2MDAsMTE4NSBMIDE1OTksMTE4NCBMIDE1OTksMTE4MyBMIDE1OTgsMTE4MiBMIDE1OTgsMTE4MSBMIDE1OTcsMTE4MCBMIDE1OTcsMTE3OSBMIDE1OTYsMTE3OCBMIDE1OTYsMTE3NyBMIDE1OTUsMTE3NiBMIDE1OTUsMTE3NCBMIDE1OTQsMTE3MyBMIDE1OTQsMTE3MiBMIDE1OTMsMTE3MSBMIDE1OTMsMTE2OSBMIDE1OTIsMTE2OCBMIDE1OTIsMTE2NyBMIDE1OTEsMTE2NiBMIDE1OTEsMTE2NCBMIDE1OTAsMTE2MyBMIDE1OTAsMTE2MCBMIDE1ODksMTE1OSBMIDE1ODksMTE1NyBMIDE1ODgsMTE1NiBMIDE1ODgsMTE1NSBMIDE1ODcsMTE1NCBMIDE1ODcsMTE0OCBMIDE1ODYsMTE0NyBMIDE1ODcsMTE0NiBMIDE1ODksMTE0NiBMIDE1OTAsMTE0NyBMIDE1OTEsMTE0NyBMIDE1OTIsMTE0OCBMIDE1OTMsMTE0OCBMIDE1OTQsMTE0OSBMIDE1OTMsMTE1MCBMIDE1OTMsMTE1MSBMIDE1OTYsMTE1NCBMIDE1OTYsMTE1NSBMIDE1OTcsMTE1NiBMIDE1OTcsMTE1NyBMIDE1OTgsMTE1OCBMIDE1OTgsMTE1OSBMIDE2MDAsMTE2MSBMIDE2MDAsMTE2MiBMIDE2MDEsMTE2MiBMIDE2MDIsMTE2MyBMIDE2MDEsMTE2NCBMIDE2MDMsMTE2NiBMIDE2MDMsMTE2OCBMIDE2MDUsMTE3MCBMIDE2MDUsMTE3MiBMIDE2MDYsMTE3MiBMIDE2MDcsMTE3MyBMIDE2MDcsMTE3NCBMIDE2MTAsMTE3NyBMIDE2MDksMTE3OCBMIDE2MDgsMTE3OCBMIDE2MDksMTE3OCBMIDE2MTIsMTE4MSBMIDE2MTEsMTE4MiBMIDE2MTQsMTE4NSBMIDE2MTQsMTE4NiBMIDE2MTYsMTE4OCBMIDE2MTYsMTE4OSBMIDE2MTcsMTE5MCBMIDE2MTcsMTE5MSBMIDE2MTksMTE5MyBMIDE2MTksMTE5NCBMIDE2MjQsMTE5OSBMIDE2MjQsMTIwMCBMIDE2MjUsMTIwMSBMIDE2MjUsMTIwMiBMIDE2MjYsMTIwMiBMIDE2MjcsMTIwMyBMIDE2MjcsMTIwNCBMIDE2MjksMTIwNiBMIDE2MjksMTIwNyBMIDE2MzIsMTIxMCBMIDE2MzIsMTIxMSBMIDE2MzMsMTIxMiBMIDE2MzQsMTIxMiBMIDE2MzYsMTIxNCBMIDE2MzYsMTIxNSBMIDE2NDEsMTIyMCBMIDE2NDEsMTIyMSBMIDE2NDIsMTIyMSBMIDE2NDQsMTIyMyBMIDE2NDQsMTIyNCBMIDE2NDgsMTIyOCBMIDE2NDksMTIyOCBMIDE2NTYsMTIzNSBMIDE2NTcsMTIzNSBMIDE2NjIsMTI0MCBMIDE2NjMsMTI0MCBMIDE2NjYsMTI0MyBMIDE2NjcsMTI0MyBMIDE2NzEsMTI0NyBMIDE2NzIsMTI0NyBMIDE2NzQsMTI0OSBMIDE2NzUsMTI0OSBMIDE2NzYsMTI1MCBMIDE2NzcsMTI1MCBMIDE2NzgsMTI1MSBMIDE2NzksMTI1MSBMIDE2ODEsMTI1MyBMIDE2ODIsMTI1MyBMIDE2ODQsMTI1NSBMIDE2ODUsMTI1NSBMIDE2ODYsMTI1NiBMIDE2ODcsMTI1NiBMIDE2ODgsMTI1NyBMIDE2ODksMTI1NyBMIDE2OTAsMTI1OCBMIDE2OTIsMTI1OCBMIDE2OTMsMTI1OSBMIDE2OTQsMTI1OSBMIDE2OTUsMTI2MCBMIDE2OTYsMTI2MCBMIDE2OTcsMTI2MSBMIDE2OTgsMTI2MSBMIDE2OTksMTI2MiBMIDE3MDEsMTI2MiBMIDE3MDIsMTI2MyBMIDE3MDMsMTI2MyBMIDE3MDQsMTI2NCBMIDE3MDYsMTI2NCBMIDE3MDcsMTI2NSBMIDE3MDksMTI2NSBMIDE3MTAsMTI2NiBMIDE3MTMsMTI2NiBMIDE3MTQsMTI2NyBMIDE3MTYsMTI2NyBMIDE3MTcsMTI2OCBMIDE3MTgsMTI2OCBMIDE3MTksMTI2OSBMIDE3MjIsMTI2OSBMIDE3MjMsMTI3MCBMIDE3MjcsMTI3MCBMIDE3MjgsMTI3MSBMIDE3MzIsMTI3MSBMIDE3MzMsMTI3MiBMIDE3MzUsMTI3MiBMIDE3MzYsMTI3MyBMIDE3MzksMTI3MyBMIDE3NDAsMTI3NCBMIDE3NDQsMTI3NCBMIDE3NDUsMT
