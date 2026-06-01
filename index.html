@@ -651,9 +651,9 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opa
 
     <!-- DANGER ZONE -->
     <div class="card" style="margin-top:20px;border-color:rgba(192,57,43,0.3);background:rgba(192,57,43,0.03)">
-      <div class="card-title" style="color:var(--red)">⚠️ <span data-i="dangerTitle">Strefa niebezpieczna</span></div>
+      <div class="card-title" style="color:var(--red)">⚠️ <span data-i="dangerTitle">Strefa niebezpieczna</span> <span style="font-size:0.65rem;background:var(--red);color:#fff;padding:2px 6px;border-radius:10px;vertical-align:middle">MASTER</span></div>
       <p style="font-size:0.78rem;color:var(--textm);font-style:italic;margin-bottom:12px" data-i="dangerHint">Usuwa wszystkie eventy i połowy. Nie da się cofnąć.</p>
-      <button class="btn btn-sm w100" id="btnWipeDb" onclick="wipeDatabase(this)"
+      <button class="btn btn-sm w100" id="btnWipeDb" onclick="requireMaster(()=>wipeDatabase(this))"
         style="background:transparent;color:var(--red);border:2px solid var(--red);padding:12px;font-family:'Titan One',sans-serif;letter-spacing:1px;border-radius:10px;cursor:pointer">
         🗑️ <span data-i="wipeDb">Wyczyść całą bazę</span>
       </button>
@@ -854,6 +854,10 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opa
       <div class="card-title">🐟 <span data-i="myCatches">Moje połowy</span></div>
       <div class="catch-list" id="catchList"><div class="loading"><span class="spinner"></span></div></div>
       <div id="catchEmpty" style="display:none" class="empty-hint" data-i="noCatches">Brak połowów</div>
+    </div>
+    <div class="card" id="personalStatsCard" style="display:none">
+      <div class="card-title">📊 <span id="lbl-my-stats">Moje statystyki</span></div>
+      <div id="personalStatsContent"></div>
     </div>
     <div class="card">
       <div class="card-title">➕ <span data-i="addFish">Dodaj rybę</span></div>
@@ -1142,12 +1146,27 @@ function showScreen(id){
 
 // ── ADMIN ──
 let _adminCallback=null;
+let _adminLevel='admin'; // 'admin' oder 'master'
 
 function requireAdmin(callback){
+  _adminLevel='admin';
   _adminCallback=callback;
   document.getElementById('pwModal').style.display='flex';
   document.getElementById('pwInput').value='';
   document.getElementById('pwErr').classList.remove('show');
+  const hint=document.getElementById('pwHint');
+  if(hint) hint.textContent=lang==='pl'?'Hasło administratora':'Admin-Passwort';
+  setTimeout(()=>document.getElementById('pwInput').focus(),150);
+}
+
+function requireMaster(callback){
+  _adminLevel='master';
+  _adminCallback=callback;
+  document.getElementById('pwModal').style.display='flex';
+  document.getElementById('pwInput').value='';
+  document.getElementById('pwErr').classList.remove('show');
+  const hint=document.getElementById('pwHint');
+  if(hint) hint.textContent=lang==='pl'?'Hasło master administratora':'Master-Admin-Passwort';
   setTimeout(()=>document.getElementById('pwInput').focus(),150);
 }
 
@@ -1156,7 +1175,9 @@ function openAdmin(){
 }
 
 function checkPW(){
-  if(document.getElementById('pwInput').value.trim()==='0815'){
+  const val=document.getElementById('pwInput').value.trim();
+  const ok=(_adminLevel==='master'&&val==='Makaroni')||(_adminLevel==='admin'&&val==='0815');
+  if(ok){
     document.getElementById('pwModal').style.display='none';
     if(_adminCallback){const cb=_adminCallback;_adminCallback=null;cb();}
   } else {
@@ -2200,20 +2221,38 @@ function renderLeaderboard(catches){
     }).filter(p=>p.count>0).sort((a,b)=>b.val-a.val).slice(0,3);
   }
 
-  function renderCat(label,rows,unit='kg'){
-    if(!rows.length) return `<div class="lb-category">
+  let _lbExpandId=0;
+  function renderCat(label,allRows,unit='kg'){
+    if(!allRows.length) return `<div class="lb-category">
       <div class="lb-cat-title">${label}</div>
       <div class="empty-hint" style="font-size:0.75rem">–</div></div>`;
+    const catId='lbcat-'+(++_lbExpandId);
+    const top3=allRows.slice(0,3);
+    const rest=allRows.slice(3);
+    const rowHtml=(rows,start=0)=>rows.map((r,i)=>`
+      <div class="lb-row">
+        <div class="lb-rank ${rCls[start+i]||''}">${ranks[start+i]||start+i+1}</div>
+        <div class="lb-team">${r.name}</div>
+        <div class="lb-val">${r.w!==undefined?r.w:r.val}</div>
+        <div class="lb-sub"> ${unit}</div>
+      </div>`).join('');
     return `<div class="lb-category">
       <div class="lb-cat-title">${label}</div>
-      <div class="lb-rows">${rows.map((r,i)=>`
-        <div class="lb-row">
-          <div class="lb-rank ${rCls[i]||''}">${ranks[i]||i+1}</div>
-          <div class="lb-team">${r.name}</div>
-          <div class="lb-val">${r.w||r.val}</div>
-          <div class="lb-sub"> ${unit}</div>
-        </div>`).join('')}
-      </div></div>`;
+      <div class="lb-rows" id="${catId}-top">${rowHtml(top3,0)}</div>
+      ${rest.length?`
+        <div class="lb-rows" id="${catId}-rest" style="display:none">${rowHtml(rest,3)}</div>
+        <button class="btn btn-outline btn-sm" style="width:100%;margin-top:6px;font-size:0.72rem"
+          id="${catId}-btn"
+          onclick="(function(){
+            const r=document.getElementById('${catId}-rest');
+            const b=document.getElementById('${catId}-btn');
+            const open=r.style.display!=='none';
+            r.style.display=open?'none':'block';
+            b.textContent=open?'▼ '+(lang==='pl'?'Pokaż wszystkich':'Alle anzeigen')+' (${rest.length})'
+              :'▲ '+(lang==='pl'?'Zwiń':'Einklappen');
+          })()">▼ ${lang==='pl'?'Pokaż wszystkich':'Alle anzeigen'} (${rest.length})
+        </button>`:''}
+    </div>`;
   }
 
   const pokal=pokalRanking();
@@ -2425,6 +2464,122 @@ function buildLinksShareGrid(){
     };
     grid.appendChild(card);
   });
+}
+
+// ── PERSÖNLICHE STATISTIKEN ──
+async function renderPersonalStats(){
+  const card=document.getElementById('personalStatsCard');
+  const el=document.getElementById('personalStatsContent');
+  if(!card||!el||!currentPerson||!currentSessionId) return;
+
+  // Alle Fänge des Events laden für Ranking-Berechnung
+  let allCatches=[];
+  try{ allCatches=await dbSelect('catches','session_id=eq.'+currentSessionId)||[]; }
+  catch(e){return;}
+
+  const myCatches=allCatches.filter(c=>c.team_num===currentPerson.num);
+  if(!myCatches.length){card.style.display='none';return;}
+  card.style.display='block';
+
+  const FISH_CATS=[
+    {key:'Karp królewski',icon:'👑'},
+    {key:'Amur',icon:'🌿'},
+    {key:'Karp bezłuski (golec)',icon:'🪩'},
+    {key:'Sazan (karp dziki)',icon:'🐠'},
+  ];
+
+  // Rang berechnen für eine Kategorie
+  function myRank(catKey){
+    // Schwerster Fisch dieser Art pro Person
+    const byPerson={};
+    allCatches.filter(c=>c.fish_type===catKey).forEach(c=>{
+      const w=Number(c.weight_kg);
+      if(!byPerson[c.team_num]||w>byPerson[c.team_num]) byPerson[c.team_num]=w;
+    });
+    const sorted=Object.entries(byPerson).sort((a,b)=>b[1]-a[1]);
+    const idx=sorted.findIndex(([num])=>Number(num)===currentPerson.num);
+    const myW=byPerson[currentPerson.num]||0;
+    return {rank:idx>=0?idx+1:null, weight:myW, total:sorted.length};
+  }
+
+  // Pokal-Rang
+  function myPokalRank(){
+    const byPerson={};
+    allCatches.forEach(c=>{
+      if(!byPerson[c.team_num]) byPerson[c.team_num]=[];
+      byPerson[c.team_num].push(Number(c.weight_kg));
+    });
+    const totals=Object.entries(byPerson).map(([num,ws])=>{
+      const top3=ws.sort((a,b)=>b-a).slice(0,3);
+      return [Number(num), Math.round(top3.reduce((s,w)=>s+w,0)*100)/100];
+    }).sort((a,b)=>b[1]-a[1]);
+    const idx=totals.findIndex(([num])=>num===currentPerson.num);
+    const myVal=totals.find(([num])=>num===currentPerson.num)?.[1]||0;
+    return {rank:idx>=0?idx+1:null, val:myVal, total:totals.length};
+  }
+
+  // Meine Fang-Zusammenfassung
+  const myTotal=Math.round(myCatches.reduce((s,c)=>s+Number(c.weight_kg),0)*100)/100;
+  const myTop3=myCatches.map(c=>Number(c.weight_kg)).sort((a,b)=>b-a).slice(0,3);
+  const myPokal=Math.round(myTop3.reduce((s,w)=>s+w,0)*100)/100;
+  const myHeaviest=myCatches.reduce((m,c)=>Number(c.weight_kg)>Number(m.weight_kg)?c:m,myCatches[0]);
+
+  const rankBadge=(r,total)=>{
+    if(!r) return '<span style="color:var(--textm)">–</span>';
+    const col=r===1?'var(--gold)':r===2?'#aaa':r===3?'#cd7f32':'var(--text)';
+    const emoji=r===1?'🥇':r===2?'🥈':r===3?'🥉':'#'+r;
+    return `<span style="font-weight:700;color:${col}">${emoji}</span>
+      <span style="font-size:0.7rem;color:var(--textm)"> / ${total}</span>`;
+  };
+
+  // Kategorie-Tabelle
+  const catRows=FISH_CATS.map(fc=>{
+    const {rank,weight,total}=myRank(fc.key);
+    if(!weight) return '';
+    return `<tr>
+      <td style="padding:5px 8px">${fc.icon} ${fc.key.split(' ')[0]}</td>
+      <td style="padding:5px 8px;font-weight:600">${weight} kg</td>
+      <td style="padding:5px 8px">${rankBadge(rank,total)}</td>
+    </tr>`;
+  }).filter(Boolean).join('');
+
+  const pokal=myPokalRank();
+
+  el.innerHTML=`
+    <!-- Zusammenfassung -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div style="background:var(--bg2);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:1.1rem;font-weight:700;color:var(--moss3)">${myCatches.length}</div>
+        <div style="font-size:0.68rem;color:var(--textm)">${lang==='pl'?'złowionych ryb':'Fische gesamt'}</div>
+      </div>
+      <div style="background:var(--bg2);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:1.1rem;font-weight:700;color:var(--moss3)">${myTotal} kg</div>
+        <div style="font-size:0.68rem;color:var(--textm)">${lang==='pl'?'łączna waga':'Gesamtgewicht'}</div>
+      </div>
+      <div style="background:var(--bg2);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:1.1rem;font-weight:700;color:var(--moss3)">${myHeaviest.weight_kg} kg</div>
+        <div style="font-size:0.68rem;color:var(--textm)">${myHeaviest.fish_type}</div>
+      </div>
+      <div style="background:var(--bg2);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:1.1rem;font-weight:700;color:var(--gold)">${myPokal} kg</div>
+        <div style="font-size:0.68rem;color:var(--textm)">🏆 ${lang==='pl'?'Puchar (top 3)':'Pokal (Top 3)'}</div>
+      </div>
+    </div>
+    <!-- Pokale -->
+    ${pokal.rank?`<div style="background:rgba(212,168,67,0.1);border:1.5px solid var(--gold);
+      border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:0.82rem">
+      🏆 ${lang==='pl'?'Puchar':'Pokal'}: ${rankBadge(pokal.rank,pokal.total)}
+      <span style="color:var(--textm);font-size:0.7rem"> (${myPokal} kg)</span>
+    </div>`:''}
+    <!-- Kategorien -->
+    ${catRows?`<table style="width:100%;border-collapse:collapse;font-size:0.8rem">
+      <thead><tr style="background:var(--moss3);color:#fff">
+        <th style="padding:5px 8px;text-align:left;border-radius:6px 0 0 0">${lang==='pl'?'Gatunek':'Art'}</th>
+        <th style="padding:5px 8px;text-align:left">${lang==='pl'?'Najcięższa':'Schwerste'}</th>
+        <th style="padding:5px 8px;text-align:left;border-radius:0 6px 0 0">${lang==='pl'?'Miejsce':'Platz'}</th>
+      </tr></thead>
+      <tbody>${catRows}</tbody>
+    </table>`:''}`;
 }
 
 // ── SEED DEMO 2 (in screenManage) ──
